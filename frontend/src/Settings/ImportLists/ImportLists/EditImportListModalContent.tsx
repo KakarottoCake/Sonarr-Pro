@@ -72,6 +72,7 @@ function EditImportListModalContent({
     seriesType,
     seasonFolder,
     tags,
+    tagExisting,
     fields,
   } = item;
 
@@ -272,6 +273,18 @@ function EditImportListModalContent({
             />
           </FormGroup>
 
+          <FormGroup>
+            <FormLabel>{translate('TagExisting')}</FormLabel>
+
+            <FormInputGroup
+              type={inputTypes.CHECK}
+              name="tagExisting"
+              helpText={translate('TagExistingHelpText')}
+              {...tagExisting}
+              onChange={handleInputChange}
+            />
+          </FormGroup>
+
           {fields?.map((field) => {
             return (
               <ProviderFieldFormGroup
@@ -286,6 +299,7 @@ function EditImportListModalContent({
           })}
         </Form>
       </ModalBody>
+
       <ModalFooter>
         {id ? (
           <Button
