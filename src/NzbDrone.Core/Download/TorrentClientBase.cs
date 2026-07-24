@@ -8,6 +8,7 @@ using NzbDrone.Common.Extensions;
 using NzbDrone.Common.Http;
 using NzbDrone.Core.Blocklisting;
 using NzbDrone.Core.Configuration;
+using NzbDrone.Core.Download.FakeRelease;
 using NzbDrone.Core.Exceptions;
 using NzbDrone.Core.Indexers;
 using NzbDrone.Core.Localization;
@@ -26,6 +27,12 @@ namespace NzbDrone.Core.Download
         private readonly IBlocklistService _blocklistService;
         protected readonly ITorrentFileInfoReader _torrentFileInfoReader;
 
+        // Constructed directly rather than injected: the inspector's only dependency is the
+        // logger, and adding a constructor parameter would churn all 13 torrent client
+        // subclasses for no benefit. The detection logic is tested directly against
+        // FakeReleaseInspector, which is where all the behaviour lives.
+        private readonly IInspectReleaseContents _fakeReleaseInspector;
+
         protected TorrentClientBase(ITorrentFileInfoReader torrentFileInfoReader,
             IHttpClient httpClient,
             IConfigService configService,
@@ -39,6 +46,7 @@ namespace NzbDrone.Core.Download
             _httpClient = httpClient;
             _blocklistService = blocklistService;
             _torrentFileInfoReader = torrentFileInfoReader;
+            _fakeReleaseInspector = new FakeReleaseInspector(logger);
         }
 
         public override DownloadProtocol Protocol => DownloadProtocol.Torrent;
@@ -200,6 +208,7 @@ namespace NzbDrone.Core.Download
             var hash = _torrentFileInfoReader.GetHashFromTorrentFile(torrentFile);
 
             EnsureReleaseIsNotBlocklisted(remoteEpisode, indexer, hash);
+            EnsureReleaseIsNotFake(remoteEpisode, torrentFile);
 
             var actualHash = AddFromTorrentFile(remoteEpisode, hash, filename, torrentFile);
 
@@ -244,6 +253,44 @@ namespace NzbDrone.Core.Download
             }
 
             return actualHash;
+        }
+
+        private void EnsureReleaseIsNotFake(RemoteEpisode remoteEpisode, byte[] torrentFile)
+        {
+            if (!_configService.EnableFakeReleaseProtection)
+            {
+                return;
+            }
+
+            TorrentContents contents;
+
+            try
+            {
+                contents = _torrentFileInfoReader.GetContentsFromTorrentFile(torrentFile);
+            }
+            catch (Exception ex)
+            {
+                // The hash was already read from this file, so a failure here is unexpected.
+                // Inspection is a safety net, not a gate: let the grab proceed rather than
+                // blocking a release because we could not read its file list.
+                _logger.Debug(ex, "Unable to read contents of torrent for '{0}', skipping fake release inspection", remoteEpisode.Release.Title);
+                return;
+            }
+
+            var detection = _fakeReleaseInspector.Inspect(contents);
+
+            if (detection.IsFake)
+            {
+                _logger.Warn("Release '{0}' rejected as fake ({1}): {2}",
+                    remoteEpisode.Release.Title,
+                    detection.Reason,
+                    detection.Message);
+
+                throw new FakeReleaseException(
+                    remoteEpisode.Release,
+                    detection.Reason,
+                    string.Format("Release rejected as fake: {0}", detection.Message));
+            }
         }
 
         private void EnsureReleaseIsNotBlocklisted(RemoteEpisode remoteEpisode, IIndexer indexer, string hash)

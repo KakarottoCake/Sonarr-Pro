@@ -157,6 +157,13 @@ namespace NzbDrone.Core.Configuration
             set { SetValue("AutoRedownloadFailedFromInteractiveSearch", value); }
         }
 
+        public bool EnableFakeReleaseProtection
+        {
+            get { return GetValueBoolean("EnableFakeReleaseProtection", true); }
+
+            set { SetValue("EnableFakeReleaseProtection", value); }
+        }
+
         public bool CreateEmptySeriesFolders
         {
             get { return GetValueBoolean("CreateEmptySeriesFolders", false); }
