@@ -171,6 +171,13 @@ namespace NzbDrone.Core.Configuration
             set { SetValue("TmdbApiKey", value); }
         }
 
+        public bool EnableMultiSeasonReleases
+        {
+            get { return GetValueBoolean("EnableMultiSeasonReleases", true); }
+
+            set { SetValue("EnableMultiSeasonReleases", value); }
+        }
+
         public bool CreateEmptySeriesFolders
         {
             get { return GetValueBoolean("CreateEmptySeriesFolders", false); }

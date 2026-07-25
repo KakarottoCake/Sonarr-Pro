@@ -14,6 +14,16 @@ namespace NzbDrone.Core.Parser.Model
         public SeriesTitleInfo SeriesTitleInfo { get; set; }
         public QualityModel Quality { get; set; }
         public int SeasonNumber { get; set; }
+
+        /// <summary>
+        /// Every season the release title mentions, ascending. A single-season release has
+        /// one entry; a pack spanning several has one per season.
+        /// <para>
+        /// <see cref="SeasonNumber"/> stays the first of these so the many single-season
+        /// code paths keep working unchanged.
+        /// </para>
+        /// </summary>
+        public int[] SeasonNumbers { get; set; }
         public int[] EpisodeNumbers { get; set; }
         public int[] AbsoluteEpisodeNumbers { get; set; }
         public decimal[] SpecialAbsoluteEpisodeNumbers { get; set; }
@@ -37,6 +47,7 @@ namespace NzbDrone.Core.Parser.Model
             EpisodeNumbers = Array.Empty<int>();
             AbsoluteEpisodeNumbers = Array.Empty<int>();
             SpecialAbsoluteEpisodeNumbers = Array.Empty<decimal>();
+            SeasonNumbers = Array.Empty<int>();
             Languages = new List<Language>();
         }
 

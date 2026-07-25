@@ -1,14 +1,18 @@
 ﻿using NLog;
+using NzbDrone.Common.Extensions;
+using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Parser.Model;
 
 namespace NzbDrone.Core.DecisionEngine.Specifications
 {
     public class MultiSeasonSpecification : IDownloadDecisionEngineSpecification
     {
+        private readonly IConfigService _configService;
         private readonly Logger _logger;
 
-        public MultiSeasonSpecification(Logger logger)
+        public MultiSeasonSpecification(IConfigService configService, Logger logger)
         {
+            _configService = configService;
             _logger = logger;
         }
 
@@ -17,11 +21,29 @@ namespace NzbDrone.Core.DecisionEngine.Specifications
 
         public virtual DownloadSpecDecision IsSatisfiedBy(RemoteEpisode subject, ReleaseDecisionInformation information)
         {
-            if (subject.ParsedEpisodeInfo.IsMultiSeason)
+            if (!subject.ParsedEpisodeInfo.IsMultiSeason)
             {
-                _logger.Debug("Multi-season release {0} rejected. Not supported", subject.Release.Title);
-                return DownloadSpecDecision.Reject(DownloadRejectionReason.MultiSeason, "Multi-season releases are not supported");
+                return DownloadSpecDecision.Accept();
             }
+
+            if (!_configService.EnableMultiSeasonReleases)
+            {
+                _logger.Debug("Multi-season release {0} rejected. Not enabled", subject.Release.Title);
+                return DownloadSpecDecision.Reject(DownloadRejectionReason.MultiSeason, "Multi-season releases are not enabled");
+            }
+
+            // The pack has to actually contain episodes that were searched for. Without this
+            // a pack spanning seasons 1-9 would be accepted for a season 3 search on the
+            // strength of the title alone.
+            if (subject.Episodes == null || subject.Episodes.Empty())
+            {
+                _logger.Debug("Multi-season release {0} rejected. No matching episodes", subject.Release.Title);
+                return DownloadSpecDecision.Reject(DownloadRejectionReason.MultiSeason, "Multi-season release does not match any wanted episodes");
+            }
+
+            _logger.Debug("Multi-season release {0} accepted, spanning seasons {1}",
+                          subject.Release.Title,
+                          string.Join(", ", subject.ParsedEpisodeInfo.SeasonNumbers));
 
             return DownloadSpecDecision.Accept();
         }

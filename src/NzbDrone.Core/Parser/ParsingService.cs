@@ -271,6 +271,16 @@ namespace NzbDrone.Core.Parser
                     }
                 }
 
+                // A pack spanning several seasons resolves to the episodes of all of them.
+                // Scene numbering is not applied here because scene seasons are mapped one
+                // at a time and a multi-season pack has no single scene season.
+                if (parsedEpisodeInfo.IsMultiSeason && parsedEpisodeInfo.SeasonNumbers.Length > 1)
+                {
+                    return parsedEpisodeInfo.SeasonNumbers
+                        .SelectMany(s => _episodeService.GetEpisodesBySeason(series.Id, s))
+                        .ToList();
+                }
+
                 return _episodeService.GetEpisodesBySeason(series.Id, mappedSeasonNumber);
             }
 

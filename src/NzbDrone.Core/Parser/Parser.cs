@@ -1058,15 +1058,19 @@ namespace NzbDrone.Core.Parser
                     }
                 }
 
-                // If more than 1 season was parsed set IsMultiSeason to true so it can be rejected later
-                if (seasons.Distinct().Count() > 1)
+                var distinctSeasons = seasons.Distinct().OrderBy(s => s).ToArray();
+
+                if (distinctSeasons.Length > 1)
                 {
                     result.IsMultiSeason = true;
                 }
 
                 if (seasons.Any())
                 {
-                    // If at least one season was parsed use the first season as the season
+                    // Every parsed season is kept so multi-season packs can be mapped to all
+                    // of their episodes. SeasonNumber remains the first for compatibility with
+                    // the single-season paths that read it.
+                    result.SeasonNumbers = distinctSeasons;
                     result.SeasonNumber = seasons.First();
                 }
                 else if (!result.AbsoluteEpisodeNumbers.Any() && result.EpisodeNumbers.Any())

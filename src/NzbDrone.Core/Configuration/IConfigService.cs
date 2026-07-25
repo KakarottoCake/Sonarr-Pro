@@ -23,6 +23,7 @@ namespace NzbDrone.Core.Configuration
         bool AutoRedownloadFailed { get; set; }
         bool AutoRedownloadFailedFromInteractiveSearch { get; set; }
         bool EnableFakeReleaseProtection { get; set; }
+        bool EnableMultiSeasonReleases { get; set; }
 
         // Metadata
         string TmdbApiKey { get; set; }
