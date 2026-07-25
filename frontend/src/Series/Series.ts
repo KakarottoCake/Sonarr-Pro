@@ -105,6 +105,13 @@ interface Series extends ModelBase {
   tvMazeId: number;
   tvRageId: number;
   tmdbId: number;
+  metadataSource?: string;
+  foreignId?: string;
+
+  // The episode ordering the series was added with, such as a TMDB episode group id.
+  // Chosen on add and fixed afterwards, since it determines the numbering written into
+  // file and folder names.
+  orderingId?: string | null;
   useSceneNumbering: boolean;
   year: number;
   addOptions: SeriesAddOptions;

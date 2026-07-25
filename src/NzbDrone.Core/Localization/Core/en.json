@@ -705,6 +705,8 @@
   "EpisodeMonitoring": "Episode Monitoring",
   "EpisodeNaming": "Episode Naming",
   "EpisodeNumbers": "Episode Number(s)",
+  "EpisodeOrdering": "Episode Ordering",
+  "EpisodeOrderingHelpText": "How episodes are numbered for this series. Absolute numbers every episode in one continuous run with no seasons, which is how long-running anime is usually released. This cannot be changed after the series is added, because the numbering is used in file and folder names",
   "EpisodeProgress": "Episode Progress",
   "EpisodeQualities": "Episode Qualities",
   "EpisodeRequested": "Episode Requested",
