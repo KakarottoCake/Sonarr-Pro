@@ -1,11 +1,11 @@
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace NzbDrone.Core.MetadataSource.Tmdb.Resource
 {
     public class TmdbSeasonDetailResource
     {
-        [JsonPropertyName("season_number")]
+        [JsonProperty("season_number")]
         public int SeasonNumber { get; set; }
 
         public List<TmdbEpisodeResource> Episodes { get; set; }
@@ -15,27 +15,27 @@ namespace NzbDrone.Core.MetadataSource.Tmdb.Resource
     {
         public int Id { get; set; }
 
-        [JsonPropertyName("episode_number")]
+        [JsonProperty("episode_number")]
         public int EpisodeNumber { get; set; }
 
-        [JsonPropertyName("season_number")]
+        [JsonProperty("season_number")]
         public int SeasonNumber { get; set; }
 
         public string Name { get; set; }
         public string Overview { get; set; }
 
-        [JsonPropertyName("air_date")]
+        [JsonProperty("air_date")]
         public string AirDate { get; set; }
 
         public int? Runtime { get; set; }
 
-        [JsonPropertyName("still_path")]
+        [JsonProperty("still_path")]
         public string StillPath { get; set; }
 
-        [JsonPropertyName("vote_average")]
+        [JsonProperty("vote_average")]
         public decimal VoteAverage { get; set; }
 
-        [JsonPropertyName("vote_count")]
+        [JsonProperty("vote_count")]
         public int VoteCount { get; set; }
     }
 }

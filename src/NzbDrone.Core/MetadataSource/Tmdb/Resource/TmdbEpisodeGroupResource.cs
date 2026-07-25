@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace NzbDrone.Core.MetadataSource.Tmdb.Resource
 {
@@ -17,10 +17,10 @@ namespace NzbDrone.Core.MetadataSource.Tmdb.Resource
         public string Name { get; set; }
         public string Description { get; set; }
 
-        [JsonPropertyName("episode_count")]
+        [JsonProperty("episode_count")]
         public int EpisodeCount { get; set; }
 
-        [JsonPropertyName("group_count")]
+        [JsonProperty("group_count")]
         public int GroupCount { get; set; }
 
         /// <summary>
@@ -66,19 +66,19 @@ namespace NzbDrone.Core.MetadataSource.Tmdb.Resource
         /// <summary>
         /// The episode's number in the series' default ordering, not this group's.
         /// </summary>
-        [JsonPropertyName("episode_number")]
+        [JsonProperty("episode_number")]
         public int EpisodeNumber { get; set; }
 
-        [JsonPropertyName("season_number")]
+        [JsonProperty("season_number")]
         public int SeasonNumber { get; set; }
 
         public string Name { get; set; }
         public string Overview { get; set; }
 
-        [JsonPropertyName("air_date")]
+        [JsonProperty("air_date")]
         public string AirDate { get; set; }
 
-        [JsonPropertyName("still_path")]
+        [JsonProperty("still_path")]
         public string StillPath { get; set; }
     }
 }

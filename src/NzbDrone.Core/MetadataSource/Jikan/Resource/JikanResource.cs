@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace NzbDrone.Core.MetadataSource.Jikan.Resource
 {
@@ -11,15 +11,15 @@ namespace NzbDrone.Core.MetadataSource.Jikan.Resource
 
     public class JikanAnimeResource
     {
-        [JsonPropertyName("mal_id")]
+        [JsonProperty("mal_id")]
         public int MalId { get; set; }
 
         public string Title { get; set; }
 
-        [JsonPropertyName("title_english")]
+        [JsonProperty("title_english")]
         public string TitleEnglish { get; set; }
 
-        [JsonPropertyName("title_japanese")]
+        [JsonProperty("title_japanese")]
         public string TitleJapanese { get; set; }
 
         public List<JikanTitleResource> Titles { get; set; }
@@ -30,7 +30,7 @@ namespace NzbDrone.Core.MetadataSource.Jikan.Resource
         public string Duration { get; set; }
         public decimal? Score { get; set; }
 
-        [JsonPropertyName("scored_by")]
+        [JsonProperty("scored_by")]
         public int? ScoredBy { get; set; }
 
         public JikanImagesResource Images { get; set; }
@@ -58,10 +58,10 @@ namespace NzbDrone.Core.MetadataSource.Jikan.Resource
 
     public class JikanImageSetResource
     {
-        [JsonPropertyName("large_image_url")]
+        [JsonProperty("large_image_url")]
         public string LargeImageUrl { get; set; }
 
-        [JsonPropertyName("image_url")]
+        [JsonProperty("image_url")]
         public string ImageUrl { get; set; }
     }
 
@@ -78,21 +78,21 @@ namespace NzbDrone.Core.MetadataSource.Jikan.Resource
 
     public class JikanPaginationResource
     {
-        [JsonPropertyName("last_visible_page")]
+        [JsonProperty("last_visible_page")]
         public int LastVisiblePage { get; set; }
 
-        [JsonPropertyName("has_next_page")]
+        [JsonProperty("has_next_page")]
         public bool HasNextPage { get; set; }
     }
 
     public class JikanEpisodeResource
     {
-        [JsonPropertyName("mal_id")]
+        [JsonProperty("mal_id")]
         public int MalId { get; set; }
 
         public string Title { get; set; }
 
-        [JsonPropertyName("title_japanese")]
+        [JsonProperty("title_japanese")]
         public string TitleJapanese { get; set; }
 
         public DateTime? Aired { get; set; }

@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace NzbDrone.Core.MetadataSource.Tmdb.Resource
 {
@@ -8,40 +8,40 @@ namespace NzbDrone.Core.MetadataSource.Tmdb.Resource
         public int Id { get; set; }
         public string Name { get; set; }
 
-        [JsonPropertyName("original_name")]
+        [JsonProperty("original_name")]
         public string OriginalName { get; set; }
 
         public string Overview { get; set; }
 
-        [JsonPropertyName("first_air_date")]
+        [JsonProperty("first_air_date")]
         public string FirstAirDate { get; set; }
 
-        [JsonPropertyName("last_air_date")]
+        [JsonProperty("last_air_date")]
         public string LastAirDate { get; set; }
 
         public string Status { get; set; }
 
-        [JsonPropertyName("episode_run_time")]
+        [JsonProperty("episode_run_time")]
         public List<int> EpisodeRunTime { get; set; }
 
-        [JsonPropertyName("original_language")]
+        [JsonProperty("original_language")]
         public string OriginalLanguage { get; set; }
 
-        [JsonPropertyName("origin_country")]
+        [JsonProperty("origin_country")]
         public List<string> OriginCountry { get; set; }
 
         public List<TmdbGenreResource> Genres { get; set; }
 
-        [JsonPropertyName("vote_average")]
+        [JsonProperty("vote_average")]
         public decimal VoteAverage { get; set; }
 
-        [JsonPropertyName("vote_count")]
+        [JsonProperty("vote_count")]
         public int VoteCount { get; set; }
 
-        [JsonPropertyName("poster_path")]
+        [JsonProperty("poster_path")]
         public string PosterPath { get; set; }
 
-        [JsonPropertyName("backdrop_path")]
+        [JsonProperty("backdrop_path")]
         public string BackdropPath { get; set; }
 
         public List<TmdbNetworkResource> Networks { get; set; }
@@ -50,10 +50,10 @@ namespace NzbDrone.Core.MetadataSource.Tmdb.Resource
         /// <summary>
         /// Populated via append_to_response so the ids arrive on the same request.
         /// </summary>
-        [JsonPropertyName("external_ids")]
+        [JsonProperty("external_ids")]
         public TmdbExternalIdsResource ExternalIds { get; set; }
 
-        [JsonPropertyName("content_ratings")]
+        [JsonProperty("content_ratings")]
         public TmdbContentRatingsResource ContentRatings { get; set; }
     }
 
@@ -73,24 +73,24 @@ namespace NzbDrone.Core.MetadataSource.Tmdb.Resource
     {
         public int Id { get; set; }
 
-        [JsonPropertyName("season_number")]
+        [JsonProperty("season_number")]
         public int SeasonNumber { get; set; }
 
-        [JsonPropertyName("episode_count")]
+        [JsonProperty("episode_count")]
         public int EpisodeCount { get; set; }
 
         public string Name { get; set; }
 
-        [JsonPropertyName("poster_path")]
+        [JsonProperty("poster_path")]
         public string PosterPath { get; set; }
     }
 
     public class TmdbExternalIdsResource
     {
-        [JsonPropertyName("imdb_id")]
+        [JsonProperty("imdb_id")]
         public string ImdbId { get; set; }
 
-        [JsonPropertyName("tvdb_id")]
+        [JsonProperty("tvdb_id")]
         public int? TvdbId { get; set; }
     }
 
@@ -101,7 +101,7 @@ namespace NzbDrone.Core.MetadataSource.Tmdb.Resource
 
     public class TmdbContentRatingResource
     {
-        [JsonPropertyName("iso_3166_1")]
+        [JsonProperty("iso_3166_1")]
         public string Country { get; set; }
 
         public string Rating { get; set; }
