@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Datastore;
 using NzbDrone.Core.Languages;
+using NzbDrone.Core.MetadataSource;
 using NzbDrone.Core.Profiles.Qualities;
 
 namespace NzbDrone.Core.Tv
@@ -26,6 +27,17 @@ namespace NzbDrone.Core.Tv
         public int TvMazeId { get; set; }
         public string ImdbId { get; set; }
         public int TmdbId { get; set; }
+
+        /// <summary>
+        /// Which provider owns this series' metadata. Exactly one provider owns a series;
+        /// see <see cref="MetadataSource.MetadataSourceType"/> for why they are not merged.
+        /// </summary>
+        public MetadataSourceType MetadataSource { get; set; }
+
+        /// <summary>
+        /// The identifier the owning provider uses for this series.
+        /// </summary>
+        public string ForeignId { get; set; }
         public HashSet<int> MalIds { get; set; }
         public HashSet<int> AniListIds { get; set; }
         public string Title { get; set; }
