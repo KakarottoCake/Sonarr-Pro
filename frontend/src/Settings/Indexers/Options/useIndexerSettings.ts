@@ -5,6 +5,8 @@ export interface IndexerSettingsModel {
   retention: number;
   maximumSize: number;
   rssSyncInterval: number;
+  enableFakeReleaseProtection: boolean;
+  enableMultiSeasonReleases: boolean;
 }
 
 const PATH = '/settings/indexer';

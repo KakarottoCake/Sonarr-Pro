@@ -112,6 +112,30 @@ function IndexerOptions({
             />
           </FormGroup>
 
+          <FormGroup>
+            <FormLabel>{translate('EnableFakeReleaseProtection')}</FormLabel>
+
+            <FormInputGroup
+              type={inputTypes.CHECK}
+              name="enableFakeReleaseProtection"
+              helpText={translate('EnableFakeReleaseProtectionHelpText')}
+              onChange={handleInputChange}
+              {...settings.enableFakeReleaseProtection}
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <FormLabel>{translate('EnableMultiSeasonReleases')}</FormLabel>
+
+            <FormInputGroup
+              type={inputTypes.CHECK}
+              name="enableMultiSeasonReleases"
+              helpText={translate('EnableMultiSeasonReleasesHelpText')}
+              onChange={handleInputChange}
+              {...settings.enableMultiSeasonReleases}
+            />
+          </FormGroup>
+
           <FormGroup advancedSettings={showAdvancedSettings} isAdvanced={true}>
             <FormLabel>{translate('RssSyncInterval')}</FormLabel>
 
