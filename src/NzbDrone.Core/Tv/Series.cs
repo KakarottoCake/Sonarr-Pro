@@ -89,7 +89,18 @@ namespace NzbDrone.Core.Tv
 
         public void ApplyChanges(Series otherSeries)
         {
-            TvdbId = otherSeries.TvdbId;
+            // Only overwrite when the incoming series actually carries an id. A series added
+            // from a provider that keys on something else arrives without one, and zeroing it
+            // would discard the id the provider resolved.
+            if (otherSeries.TvdbId != 0)
+            {
+                TvdbId = otherSeries.TvdbId;
+            }
+
+            // MetadataSource, ForeignId and OrderingId are deliberately not carried here.
+            // This method is also used to apply an edit onto an existing series, so taking
+            // them from the request would let a client that omits them silently re-point a
+            // series at a different provider. AddSeriesService sets them explicitly instead.
 
             Seasons = otherSeries.Seasons;
             Path = otherSeries.Path;

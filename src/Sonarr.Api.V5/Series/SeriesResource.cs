@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Languages;
 using NzbDrone.Core.MediaCover;
+using NzbDrone.Core.MetadataSource;
 using NzbDrone.Core.Tv;
 using Sonarr.Http.REST;
 using Swashbuckle.AspNetCore.Annotations;
@@ -39,6 +40,23 @@ public class SeriesResource : RestResource
     public int TmdbId { get; set; }
     public HashSet<int>? MalIds { get; set; }
     public HashSet<int>? AniListIds { get; set; }
+
+    /// <summary>
+    /// Which provider owns this series' metadata.
+    /// </summary>
+    public MetadataSourceType MetadataSource { get; set; }
+
+    /// <summary>
+    /// The owning provider's identifier for this series.
+    /// </summary>
+    public string? ForeignId { get; set; }
+
+    /// <summary>
+    /// The episode ordering chosen when the series was added, such as a TMDB episode group
+    /// id. Null uses the provider's default. Set on add only.
+    /// </summary>
+    public string? OrderingId { get; set; }
+
     public DateTime? FirstAired { get; set; }
     public DateTime? LastAired { get; set; }
     public SeriesTypes SeriesType { get; set; }
@@ -92,6 +110,9 @@ public static class SeriesResourceMapper
             TmdbId = model.TmdbId,
             MalIds = model.MalIds,
             AniListIds = model.AniListIds,
+            MetadataSource = model.MetadataSource,
+            ForeignId = model.ForeignId,
+            OrderingId = model.OrderingId,
             FirstAired = model.FirstAired,
             LastAired = model.LastAired,
             SeriesType = model.SeriesType,
@@ -135,6 +156,9 @@ public static class SeriesResourceMapper
             TmdbId = resource.TmdbId,
             MalIds = resource.MalIds,
             AniListIds = resource.AniListIds,
+            MetadataSource = resource.MetadataSource,
+            ForeignId = resource.ForeignId,
+            OrderingId = resource.OrderingId,
             FirstAired = resource.FirstAired,
             SeriesType = resource.SeriesType,
             CleanTitle = resource.CleanTitle,

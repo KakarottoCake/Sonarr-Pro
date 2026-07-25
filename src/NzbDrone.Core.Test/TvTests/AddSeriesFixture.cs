@@ -20,6 +20,7 @@ namespace NzbDrone.Core.Test.TvTests
     public class AddSeriesFixture : CoreTest<AddSeriesService>
     {
         private Series _fakeSeries;
+        private Mock<IMetadataProvider> _metadataProvider;
 
         [SetUp]
         public void Setup()
@@ -28,13 +29,18 @@ namespace NzbDrone.Core.Test.TvTests
                 .CreateNew()
                 .With(s => s.Path = null)
                 .Build();
+
+            _metadataProvider = new Mock<IMetadataProvider>();
+
+            Mocker.GetMock<IMetadataProviderFactory>()
+                  .Setup(s => s.GetProvider(It.IsAny<Series>()))
+                  .Returns(() => _metadataProvider.Object);
         }
 
         private void GivenValidSeries(int tvdbId)
         {
-            Mocker.GetMock<IProvideSeriesInfo>()
-                  .Setup(s => s.GetSeriesInfo(tvdbId))
-                  .Returns(new Tuple<Series, List<Episode>>(_fakeSeries, new List<Episode>()));
+            _metadataProvider.Setup(s => s.GetSeriesInfo(It.Is<Series>(v => v.TvdbId == tvdbId)))
+                             .Returns(new Tuple<Series, List<Episode>>(_fakeSeries, new List<Episode>()));
         }
 
         private void GivenValidPath()
@@ -112,9 +118,8 @@ namespace NzbDrone.Core.Test.TvTests
                 Path = @"C:\Test\TV\Title1"
             };
 
-            Mocker.GetMock<IProvideSeriesInfo>()
-                  .Setup(s => s.GetSeriesInfo(newSeries.TvdbId))
-                  .Throws(new SeriesNotFoundException(newSeries.TvdbId));
+            _metadataProvider.Setup(s => s.GetSeriesInfo(It.IsAny<Series>()))
+                             .Throws(new SeriesNotFoundException(newSeries.TvdbId));
 
             Mocker.GetMock<IAddSeriesValidator>()
                   .Setup(s => s.Validate(It.IsAny<Series>()))
@@ -126,6 +131,71 @@ namespace NzbDrone.Core.Test.TvTests
             Assert.Throws<ValidationException>(() => Subject.AddSeries(newSeries));
 
             ExceptionVerification.ExpectedErrors(1);
+        }
+
+        [Test]
+        public void should_use_the_provider_named_by_the_request()
+        {
+            GivenValidSeries(1);
+            GivenValidPath();
+
+            var newSeries = new Series
+            {
+                TvdbId = 1,
+                MetadataSource = MetadataSourceType.Tmdb,
+                ForeignId = "456",
+                RootFolderPath = @"C:\Test\TV"
+            };
+
+            Subject.AddSeries(newSeries);
+
+            Mocker.GetMock<IMetadataProviderFactory>()
+                  .Verify(v => v.GetProvider(It.Is<Series>(s => s.MetadataSource == MetadataSourceType.Tmdb)), Times.Once());
+        }
+
+        [Test]
+        public void should_keep_the_chosen_ordering()
+        {
+            GivenValidSeries(1);
+            GivenValidPath();
+
+            // The ordering is the user's choice, not the provider's, and is fixed once the
+            // series exists because it determines the numbering written into file names.
+            var newSeries = new Series
+            {
+                TvdbId = 1,
+                OrderingId = "absolute-group",
+                RootFolderPath = @"C:\Test\TV"
+            };
+
+            Subject.AddSeries(newSeries);
+
+            Mocker.GetMock<ISeriesService>()
+                  .Verify(v => v.AddSeries(It.Is<Series>(s => s.OrderingId == "absolute-group")), Times.Once());
+        }
+
+        [Test]
+        public void should_keep_the_id_resolved_by_the_provider_when_the_request_has_none()
+        {
+            // A series added from TMDB or AniList arrives without a TVDB id. The provider may
+            // still resolve one, and it must survive rather than being zeroed by the request.
+            _fakeSeries.TvdbId = 73255;
+
+            _metadataProvider.Setup(s => s.GetSeriesInfo(It.IsAny<Series>()))
+                             .Returns(new Tuple<Series, List<Episode>>(_fakeSeries, new List<Episode>()));
+
+            GivenValidPath();
+
+            Subject.AddSeries(new Series
+            {
+                TvdbId = 0,
+                MetadataSource = MetadataSourceType.Tmdb,
+                ForeignId = "456",
+                RootFolderPath = @"C:\Test\TV"
+            });
+
+            Mocker.GetMock<ISeriesService>()
+                  .Verify(v => v.AddSeries(It.Is<Series>(s => s.TvdbId == 73255)), Times.Once());
         }
     }
 }

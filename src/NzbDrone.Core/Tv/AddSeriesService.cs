@@ -23,19 +23,19 @@ namespace NzbDrone.Core.Tv
     public class AddSeriesService : IAddSeriesService
     {
         private readonly ISeriesService _seriesService;
-        private readonly IProvideSeriesInfo _seriesInfo;
+        private readonly IMetadataProviderFactory _metadataProviderFactory;
         private readonly IBuildFileNames _fileNameBuilder;
         private readonly IAddSeriesValidator _addSeriesValidator;
         private readonly Logger _logger;
 
         public AddSeriesService(ISeriesService seriesService,
-                                IProvideSeriesInfo seriesInfo,
+                                IMetadataProviderFactory metadataProviderFactory,
                                 IBuildFileNames fileNameBuilder,
                                 IAddSeriesValidator addSeriesValidator,
                                 Logger logger)
         {
             _seriesService = seriesService;
-            _seriesInfo = seriesInfo;
+            _metadataProviderFactory = metadataProviderFactory;
             _fileNameBuilder = fileNameBuilder;
             _addSeriesValidator = addSeriesValidator;
             _logger = logger;
@@ -117,7 +117,10 @@ namespace NzbDrone.Core.Tv
 
             try
             {
-                tuple = _seriesInfo.GetSeriesInfo(newSeries.TvdbId);
+                // Fetched from whichever provider the request names, so a series can be added
+                // from TMDB or AniList. Requests that name none default to Tvdb, which is the
+                // same SkyHook lookup as before.
+                tuple = _metadataProviderFactory.GetProvider(newSeries).GetSeriesInfo(newSeries);
             }
             catch (SeriesNotFoundException)
             {
@@ -135,6 +138,12 @@ namespace NzbDrone.Core.Tv
             newSeries.Seasons = newSeries.Seasons != null && newSeries.Seasons.Any() ? newSeries.Seasons : series.Seasons;
 
             series.ApplyChanges(newSeries);
+
+            // Set outside ApplyChanges, which is shared with the edit path and must not take
+            // these from a request. The provider populates its own source and id; the chosen
+            // ordering is the user's and is fixed for the life of the series, because season
+            // and episode numbers appear in file and folder names.
+            series.OrderingId = newSeries.OrderingId;
 
             return series;
         }

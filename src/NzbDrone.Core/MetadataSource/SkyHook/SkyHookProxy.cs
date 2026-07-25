@@ -191,6 +191,11 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
             var series = new Series();
             series.TvdbId = show.TvdbId;
 
+            // Stated explicitly so a series looked up now matches one migrated from an older
+            // database, where ForeignId was backfilled from TvdbId.
+            series.MetadataSource = MetadataSourceType.Tvdb;
+            series.ForeignId = show.TvdbId.ToString();
+
             if (show.TvRageId.HasValue)
             {
                 series.TvRageId = show.TvRageId.Value;
