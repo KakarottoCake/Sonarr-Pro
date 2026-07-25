@@ -19,7 +19,7 @@ namespace NzbDrone.Core.Tv
 {
     public class RefreshSeriesService : IExecute<RefreshSeriesCommand>
     {
-        private readonly IProvideSeriesInfo _seriesInfo;
+        private readonly IMetadataProviderFactory _metadataProviderFactory;
         private readonly ISeriesService _seriesService;
         private readonly IRefreshEpisodeService _refreshEpisodeService;
         private readonly IEventAggregator _eventAggregator;
@@ -29,7 +29,7 @@ namespace NzbDrone.Core.Tv
         private readonly ICommandResultReporter _commandResultReporter;
         private readonly Logger _logger;
 
-        public RefreshSeriesService(IProvideSeriesInfo seriesInfo,
+        public RefreshSeriesService(IMetadataProviderFactory metadataProviderFactory,
                                     ISeriesService seriesService,
                                     IRefreshEpisodeService refreshEpisodeService,
                                     IEventAggregator eventAggregator,
@@ -39,7 +39,7 @@ namespace NzbDrone.Core.Tv
                                     ICommandResultReporter commandResultReporter,
                                     Logger logger)
         {
-            _seriesInfo = seriesInfo;
+            _metadataProviderFactory = metadataProviderFactory;
             _seriesService = seriesService;
             _refreshEpisodeService = refreshEpisodeService;
             _eventAggregator = eventAggregator;
@@ -63,7 +63,10 @@ namespace NzbDrone.Core.Tv
 
             try
             {
-                var tuple = _seriesInfo.GetSeriesInfo(series.TvdbId);
+                // Routed through the factory so a series refreshes from whichever provider
+                // owns it. Series added before metadata sources existed default to Tvdb,
+                // which resolves to the same SkyHook proxy as before.
+                var tuple = _metadataProviderFactory.GetProvider(series).GetSeriesInfo(series);
                 seriesInfo = tuple.Item1;
                 episodes = tuple.Item2;
             }

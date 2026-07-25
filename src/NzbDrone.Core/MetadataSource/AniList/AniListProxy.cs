@@ -280,10 +280,5 @@ namespace NzbDrone.Core.MetadataSource.AniList
                 return new List<Series>();
             }
         }
-
-        // AniList does not index by these, so lookups fall through to the default provider.
-        public List<Series> SearchForNewSeriesByImdbId(string imdbId) => new List<Series>();
-        public List<Series> SearchForNewSeriesByTmdbId(int tmdbId) => new List<Series>();
-        public List<Series> SearchForNewSeriesByMyAnimeListId(int malId) => new List<Series>();
     }
 }

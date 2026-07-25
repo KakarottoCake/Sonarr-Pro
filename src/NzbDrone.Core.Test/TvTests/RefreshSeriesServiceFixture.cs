@@ -21,6 +21,7 @@ namespace NzbDrone.Core.Test.TvTests
     public class RefreshSeriesServiceFixture : CoreTest<RefreshSeriesService>
     {
         private Series _series;
+        private Mock<IMetadataProvider> _metadataProvider;
 
         [SetUp]
         public void Setup()
@@ -41,9 +42,14 @@ namespace NzbDrone.Core.Test.TvTests
                   .Setup(s => s.GetSeries(_series.Id))
                   .Returns(_series);
 
-            Mocker.GetMock<IProvideSeriesInfo>()
-                  .Setup(s => s.GetSeriesInfo(It.IsAny<int>()))
-                  .Callback<int>(p => { throw new SeriesNotFoundException(p); });
+            _metadataProvider = new Mock<IMetadataProvider>();
+
+            _metadataProvider.Setup(s => s.GetSeriesInfo(It.IsAny<Series>()))
+                             .Callback<Series>(p => { throw new SeriesNotFoundException(p.TvdbId); });
+
+            Mocker.GetMock<IMetadataProviderFactory>()
+                  .Setup(s => s.GetProvider(It.IsAny<Series>()))
+                  .Returns(() => _metadataProvider.Object);
 
             Mocker.GetMock<IAutoTaggingService>()
                 .Setup(s => s.GetTagChanges(_series))
@@ -52,9 +58,8 @@ namespace NzbDrone.Core.Test.TvTests
 
         private void GivenNewSeriesInfo(Series series)
         {
-            Mocker.GetMock<IProvideSeriesInfo>()
-                  .Setup(s => s.GetSeriesInfo(_series.TvdbId))
-                  .Returns(new Tuple<Series, List<Episode>>(series, new List<Episode>()));
+            _metadataProvider.Setup(s => s.GetSeriesInfo(It.Is<Series>(v => v.TvdbId == _series.TvdbId)))
+                             .Returns(new Tuple<Series, List<Episode>>(series, new List<Episode>()));
         }
 
         [Test]
@@ -249,9 +254,8 @@ namespace NzbDrone.Core.Test.TvTests
         [Test]
         public void should_rescan_series_if_updating_fails()
         {
-            Mocker.GetMock<IProvideSeriesInfo>()
-                  .Setup(s => s.GetSeriesInfo(_series.Id))
-                  .Throws(new IOException());
+            _metadataProvider.Setup(s => s.GetSeriesInfo(It.IsAny<Series>()))
+                             .Throws(new IOException());
 
             Subject.Execute(new RefreshSeriesCommand(new List<int> { _series.Id }));
 
@@ -264,9 +268,8 @@ namespace NzbDrone.Core.Test.TvTests
         [Test]
         public void should_not_rescan_series_if_updating_fails_with_series_not_found()
         {
-            Mocker.GetMock<IProvideSeriesInfo>()
-                  .Setup(s => s.GetSeriesInfo(_series.Id))
-                  .Throws(new SeriesNotFoundException(_series.Id));
+            _metadataProvider.Setup(s => s.GetSeriesInfo(It.IsAny<Series>()))
+                             .Throws(new SeriesNotFoundException(_series.Id));
 
             Subject.Execute(new RefreshSeriesCommand(new List<int> { _series.Id }));
 

@@ -257,11 +257,10 @@ namespace NzbDrone.Core.MetadataSource.Jikan
             }
         }
 
-        // Search is served by AniList, which has better title coverage and no shared
-        // rate limit; Jikan is used for episode detail once a series is identified.
+        /// <summary>
+        /// Search is served by AniList, which has broader title coverage and no shared
+        /// rate limit. Jikan supplies episode detail once a series is identified.
+        /// </summary>
         public List<Series> SearchForNewSeries(string title) => new List<Series>();
-        public List<Series> SearchForNewSeriesByImdbId(string imdbId) => new List<Series>();
-        public List<Series> SearchForNewSeriesByAniListId(int aniListId) => new List<Series>();
-        public List<Series> SearchForNewSeriesByTmdbId(int tmdbId) => new List<Series>();
     }
 }

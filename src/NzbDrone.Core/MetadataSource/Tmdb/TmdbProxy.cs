@@ -339,12 +339,11 @@ namespace NzbDrone.Core.MetadataSource.Tmdb
             return response.Resource;
         }
 
-        // Lookup is not implemented yet; series are still discovered through the default
-        // provider, which is what the add-series UI calls today.
+        /// <summary>
+        /// Title search is not implemented; series are discovered through the default
+        /// provider, which is what the add-series UI calls today. A series is pointed at
+        /// TMDB by its metadata source, not by being found here.
+        /// </summary>
         public List<Series> SearchForNewSeries(string title) => new List<Series>();
-        public List<Series> SearchForNewSeriesByImdbId(string imdbId) => new List<Series>();
-        public List<Series> SearchForNewSeriesByAniListId(int aniListId) => new List<Series>();
-        public List<Series> SearchForNewSeriesByTmdbId(int tmdbId) => new List<Series>();
-        public List<Series> SearchForNewSeriesByMyAnimeListId(int malId) => new List<Series>();
     }
 }

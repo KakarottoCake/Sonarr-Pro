@@ -7,19 +7,25 @@ namespace NzbDrone.Core.MetadataSource
     /// <summary>
     /// A source of series and episode metadata.
     /// <para>
-    /// Extends the pre-existing <see cref="IProvideSeriesInfo"/> and <see cref="ISearchForNewSeries"/>
-    /// ports so that the original SkyHook implementation satisfies this contract unchanged,
-    /// keeping the introduction of the abstraction behaviour-neutral.
+    /// Deliberately does not extend <see cref="IProvideSeriesInfo"/> or
+    /// <see cref="ISearchForNewSeries"/>. Services are auto-registered against every
+    /// interface they implement, and callers such as RefreshSeriesService and
+    /// SeriesLookupController inject a single instance of those two. Inheriting them here
+    /// would register every provider against them and make that resolution ambiguous.
+    /// SkyHookProxy implements all three, so it remains the only candidate for the
+    /// original pair and behaviour there is unchanged.
     /// </para>
     /// </summary>
-    public interface IMetadataProvider : IProvideSeriesInfo, ISearchForNewSeries
+    public interface IMetadataProvider
     {
         MetadataSourceType Source { get; }
 
         /// <summary>
-        /// Fetch metadata for a series using whichever identifier this provider keys on.
-        /// Preferred over <see cref="IProvideSeriesInfo.GetSeriesInfo(int)"/>, which assumes a TVDB id.
+        /// Fetch metadata using whichever identifier this provider keys on, taken from the
+        /// series' <see cref="Series.ForeignId"/>.
         /// </summary>
         Tuple<Series, List<Episode>> GetSeriesInfo(Series series);
+
+        List<Series> SearchForNewSeries(string title);
     }
 }

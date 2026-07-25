@@ -18,7 +18,7 @@ using NzbDrone.Core.Tv;
 
 namespace NzbDrone.Core.MetadataSource.SkyHook
 {
-    public class SkyHookProxy : IMetadataProvider
+    public class SkyHookProxy : IProvideSeriesInfo, ISearchForNewSeries, IMetadataProvider
     {
         public MetadataSourceType Source => MetadataSourceType.Tvdb;
 
