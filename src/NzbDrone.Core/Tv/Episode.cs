@@ -17,6 +17,14 @@ namespace NzbDrone.Core.Tv
 
         public int SeriesId { get; set; }
         public int TvdbId { get; set; }
+
+        /// <summary>
+        /// The owning provider's identifier for this episode. Stable across renumbering,
+        /// which is what keeps <see cref="EpisodeFileId"/> attached to the right episode
+        /// when a series uses a non-default ordering.
+        /// </summary>
+        public string ForeignId { get; set; }
+
         public int EpisodeFileId { get; set; }
         public int SeasonNumber { get; set; }
         public int EpisodeNumber { get; set; }

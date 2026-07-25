@@ -164,6 +164,13 @@ namespace NzbDrone.Core.Configuration
             set { SetValue("EnableFakeReleaseProtection", value); }
         }
 
+        public string TmdbApiKey
+        {
+            get { return GetValue("TmdbApiKey", string.Empty); }
+
+            set { SetValue("TmdbApiKey", value); }
+        }
+
         public bool CreateEmptySeriesFolders
         {
             get { return GetValueBoolean("CreateEmptySeriesFolders", false); }

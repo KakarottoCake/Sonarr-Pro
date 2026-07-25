@@ -38,6 +38,14 @@ namespace NzbDrone.Core.Tv
         /// The identifier the owning provider uses for this series.
         /// </summary>
         public string ForeignId { get; set; }
+
+        /// <summary>
+        /// The episode ordering this series was added with, such as a TMDB episode group id.
+        /// Null uses the provider's default ordering. Chosen when the series is added and
+        /// fixed thereafter, because season and episode numbers appear in file and folder
+        /// names on disk.
+        /// </summary>
+        public string OrderingId { get; set; }
         public HashSet<int> MalIds { get; set; }
         public HashSet<int> AniListIds { get; set; }
         public string Title { get; set; }

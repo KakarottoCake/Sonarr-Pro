@@ -24,6 +24,9 @@ namespace NzbDrone.Core.Configuration
         bool AutoRedownloadFailedFromInteractiveSearch { get; set; }
         bool EnableFakeReleaseProtection { get; set; }
 
+        // Metadata
+        string TmdbApiKey { get; set; }
+
         // Media Management
         bool AutoUnmonitorPreviouslyDownloadedEpisodes { get; set; }
         string RecycleBin { get; set; }
