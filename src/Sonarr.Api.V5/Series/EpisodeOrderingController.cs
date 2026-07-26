@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using NzbDrone.Core.MetadataSource.Imdb;
 using NzbDrone.Core.MetadataSource.Tmdb;
 using Sonarr.Http;
 
@@ -17,23 +18,36 @@ namespace Sonarr.Api.V5.Series;
 public class EpisodeOrderingController : Controller
 {
     private readonly IProvideEpisodeOrderings _orderingProvider;
+    private readonly IProvideImdbOrdering _imdbOrdering;
 
-    public EpisodeOrderingController(IProvideEpisodeOrderings orderingProvider)
+    public EpisodeOrderingController(IProvideEpisodeOrderings orderingProvider, IProvideImdbOrdering imdbOrdering)
     {
         _orderingProvider = orderingProvider;
+        _imdbOrdering = imdbOrdering;
     }
 
     [HttpGet]
-    public Ok<List<EpisodeOrderingResource>> GetOrderings([FromQuery] int tmdbId)
+    public Ok<List<EpisodeOrderingResource>> GetOrderings([FromQuery] int tmdbId, [FromQuery] string? imdbId = null)
     {
-        if (tmdbId <= 0)
+        var orderings = new List<EpisodeOrderingResource>();
+
+        if (tmdbId > 0)
         {
-            return TypedResults.Ok(new List<EpisodeOrderingResource>());
+            // GetOrderings always yields the default ordering and swallows lookup failures,
+            // so a missing or rejected API key degrades to "default only" rather than
+            // erroring. The caller shows no choice when that is all it gets.
+            orderings.AddRange(_orderingProvider.GetOrderings(tmdbId.ToString()).ToResource());
         }
 
-        // GetOrderings always yields the default ordering and swallows lookup failures, so a
-        // missing or rejected API key degrades to "default only" rather than erroring. The
-        // caller shows no choice when that is all it gets.
-        return TypedResults.Ok(_orderingProvider.GetOrderings(tmdbId.ToString()).ToResource());
+        // Null unless the local IMDb index has been built and holds this series, so the
+        // option only appears once it can actually be used.
+        var imdb = _imdbOrdering.GetOrdering(imdbId);
+
+        if (imdb != null)
+        {
+            orderings.Add(imdb.ToResource());
+        }
+
+        return TypedResults.Ok(orderings);
     }
 }
