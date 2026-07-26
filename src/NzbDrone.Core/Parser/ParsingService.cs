@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using NLog;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Common.Instrumentation.Extensions;
@@ -24,6 +25,10 @@ namespace NzbDrone.Core.Parser
 
     public class ParsingService : IParsingService
     {
+        // A trailing one or two digit number, which is how a season is commonly appended to
+        // an anime title. Bounded to two digits so a four digit year is not mistaken for one.
+        private static readonly Regex TrailingSeasonRegex = new Regex(@"\s+(?<season>\d{1,2})$", RegexOptions.Compiled);
+
         private readonly IEpisodeService _episodeService;
         private readonly ISeriesService _seriesService;
         private readonly ISceneMappingService _sceneMappingService;
@@ -67,6 +72,70 @@ namespace NzbDrone.Core.Parser
             {
                 series = _seriesService.FindByTitle(parsedEpisodeInfo.SeriesTitleInfo.TitleWithoutYear,
                                                     parsedEpisodeInfo.SeriesTitleInfo.Year);
+            }
+
+            series ??= FindByTitleWithoutSeasonSuffix(parsedEpisodeInfo);
+
+            return series;
+        }
+
+        /// <summary>
+        /// Matches a title whose trailing number is really the season, which is how anime
+        /// seasons are often released: "Tensei Shitara Slime Datta Ken 4 - S04E16" is season
+        /// four of a series stored without the number.
+        /// <para>
+        /// Only when that number is the season the release itself declares. Without that
+        /// agreement a series genuinely named with a number, Taxi 3 or Apollo 13, would be
+        /// stripped down to a different series entirely. The comparison stays exact; this
+        /// only removes a suffix the release has separately confirmed is a season.
+        /// </para>
+        /// </summary>
+        private Series FindByTitleWithoutSeasonSuffix(ParsedEpisodeInfo parsedEpisodeInfo)
+        {
+            var title = parsedEpisodeInfo?.SeriesTitle;
+
+            if (title.IsNullOrWhiteSpace() || parsedEpisodeInfo.SeasonNumber <= 0)
+            {
+                return null;
+            }
+
+            // A title the parser read a year from ends in that year, not a season, and the
+            // two can coincide: "Series Alias 4" for a series from 2004 handled as season 4.
+            // The year has its own matching path, which is allowed to reject a mismatch.
+            if (parsedEpisodeInfo.SeriesTitleInfo?.Year > 0)
+            {
+                return null;
+            }
+
+            var match = TrailingSeasonRegex.Match(title);
+
+            if (!match.Success ||
+                !int.TryParse(match.Groups["season"].Value, out var season) ||
+                season != parsedEpisodeInfo.SeasonNumber)
+            {
+                return null;
+            }
+
+            var stripped = title.Substring(0, match.Index).Trim();
+
+            if (stripped.IsNullOrWhiteSpace())
+            {
+                return null;
+            }
+
+            // Scene mappings first, for the same reason the callers try them first: a series
+            // is commonly stored under an English title while releases use the romaji one,
+            // and the mapping is what connects them. Without this the suffix is removed
+            // correctly and the name still resolves to nothing.
+            var mappedTvdbId = _sceneMappingService.FindTvdbId(stripped, parsedEpisodeInfo.ReleaseTitle, parsedEpisodeInfo.SeasonNumber);
+
+            var series = mappedTvdbId.HasValue
+                ? _seriesService.FindByTvdbId(mappedTvdbId.Value)
+                : _seriesService.FindByTitle(stripped);
+
+            if (series != null)
+            {
+                _logger.Debug("Matched '{0}' to {1} by reading the trailing {2} as its season", title, series.Title, season);
             }
 
             return series;
@@ -501,6 +570,16 @@ namespace NzbDrone.Core.Parser
                 {
                     series = GetSeriesAliasTitleAndYear(parsedEpisodeInfo);
                     matchType = SeriesMatchType.Alias;
+                }
+            }
+
+            if (series == null)
+            {
+                series = FindByTitleWithoutSeasonSuffix(parsedEpisodeInfo);
+
+                if (series != null)
+                {
+                    matchType = SeriesMatchType.Title;
                 }
             }
 
