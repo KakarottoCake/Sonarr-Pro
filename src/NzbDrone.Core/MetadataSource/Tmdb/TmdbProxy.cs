@@ -72,6 +72,7 @@ namespace NzbDrone.Core.MetadataSource.Tmdb
             }
 
             SetAbsoluteNumbering(series, episodes);
+            SetSeasons(series, episodes);
 
             return new Tuple<Series, List<Episode>>(series, episodes);
         }
@@ -149,6 +150,36 @@ namespace NzbDrone.Core.MetadataSource.Tmdb
             }
 
             return episodes;
+        }
+
+        /// <summary>
+        /// Rebuilds the season list from the episodes as they finally stand.
+        /// <para>
+        /// The seasons TMDB publishes describe its own numbering, which an ordering has
+        /// just replaced. A series put into absolute order holds every episode in season
+        /// one, so carrying TMDB's original twenty-odd seasons would leave the series page
+        /// listing twenty-odd empty seasons beside the one real one.
+        /// </para>
+        /// </summary>
+        private static void SetSeasons(Series series, List<Episode> episodes)
+        {
+            var existing = series.Seasons?.ToDictionary(s => s.SeasonNumber) ?? new Dictionary<int, Season>();
+
+            series.Seasons = episodes.Select(e => e.SeasonNumber)
+                                     .Distinct()
+                                     .OrderBy(s => s)
+                                     .Select(number => new Season
+                                     {
+                                         SeasonNumber = number,
+
+                                         // Keep whatever the series already said about a
+                                         // season that survives, and default the rest to
+                                         // monitored unless they are specials.
+                                         Monitored = existing.TryGetValue(number, out var previous)
+                                             ? previous.Monitored
+                                             : number > 0
+                                     })
+                                     .ToList();
         }
 
         /// <summary>
