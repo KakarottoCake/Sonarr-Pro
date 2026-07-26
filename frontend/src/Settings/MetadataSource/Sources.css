@@ -1,0 +1,41 @@
+.source {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--borderColor);
+}
+
+.source:last-of-type {
+  border-bottom: none;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+}
+
+.name {
+  color: var(--linkColor);
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.name:hover {
+  color: var(--linkHoverColor);
+  text-decoration: underline;
+}
+
+.status {
+  margin-left: 10px;
+  color: var(--helpTextColor);
+  font-size: 12px;
+}
+
+.description {
+  margin-top: 3px;
+  color: var(--helpTextColor);
+}
+
+.attribution {
+  margin-top: 14px;
+  color: var(--helpTextColor);
+  font-size: 12px;
+}

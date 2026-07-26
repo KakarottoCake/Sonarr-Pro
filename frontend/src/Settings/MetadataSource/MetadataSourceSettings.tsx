@@ -7,7 +7,7 @@ import {
   SettingsStateChange,
 } from 'typings/Settings/SettingsState';
 import translate from 'Utilities/String/translate';
-import TheTvdb from './TheTvdb';
+import Sources from './Sources';
 import Tmdb from './Tmdb';
 
 function MetadataSourceSettings() {
@@ -41,7 +41,7 @@ function MetadataSourceSettings() {
       />
 
       <PageContentBody>
-        <TheTvdb />
+        <Sources />
 
         <Tmdb
           setChildSave={handleSetChildSave}

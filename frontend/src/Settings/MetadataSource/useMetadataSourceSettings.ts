@@ -1,7 +1,12 @@
 import { useManageSettings, useSettings } from 'Settings/useSettings';
 
 export interface MetadataSourceSettingsModel {
+  /**
+   * Comes back masked once saved, never as the real key. Sending the mask back
+   * leaves the stored key alone.
+   */
   tmdbApiKey: string;
+  tmdbApiKeyConfigured: boolean;
 }
 
 const PATH = '/settings/metadatasource';

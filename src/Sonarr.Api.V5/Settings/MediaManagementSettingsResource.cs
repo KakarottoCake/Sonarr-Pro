@@ -23,6 +23,7 @@ public class MediaManagementSettingsResource : RestResource
 
     public EpisodeTitleRequiredType EpisodeTitleRequired { get; set; }
     public bool SkipFreeSpaceCheckWhenImporting { get; set; }
+    public bool SkipUnmonitoredEpisodesFromPacks { get; set; }
     public int MinimumFreeSpaceWhenImporting { get; set; }
     public bool CopyUsingHardlinks { get; set; }
     public bool UseScriptImport { get; set; }
@@ -56,6 +57,7 @@ public static class MediaManagementConfigResourceMapper
 
             EpisodeTitleRequired = model.EpisodeTitleRequired,
             SkipFreeSpaceCheckWhenImporting = model.SkipFreeSpaceCheckWhenImporting,
+            SkipUnmonitoredEpisodesFromPacks = model.SkipUnmonitoredEpisodesFromPacks,
             MinimumFreeSpaceWhenImporting = model.MinimumFreeSpaceWhenImporting,
             CopyUsingHardlinks = model.CopyUsingHardlinks,
             UseScriptImport = model.UseScriptImport,
