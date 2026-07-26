@@ -1,81 +1,55 @@
 name: Bug Report
-description: 'Only bug reports for v4 will be accepted, older versions are no longer receiving bug fixes and support issues will be closed immediately.'
-labels: ['needs-triage']
+description: Something isn't working
+labels: ['bug']
 body:
-- type: checkboxes
+- type: markdown
   attributes:
-    label: Is there an existing issue for this?
-    description: Please search to see if an open or closed issue already exists for the bug you encountered. If a bug exists and it is closed as complete it may not yet be in a stable release.
-    options:
-    - label: I have searched the existing open and closed issues
-      required: true
-- type: textarea
-  attributes:
-    label: Current Behavior
-    description: A concise description of what you're experiencing.
-  validations:
-    required: true
-- type: textarea
-  attributes:
-    label: Expected Behavior
-    description: A concise description of what you expected to happen.
-  validations:
-    required: true
-- type: textarea
-  attributes:
-    label: Steps To Reproduce
-    description: Steps to reproduce the behavior.
-    placeholder: |
-      1. In this environment...
-      2. With this config...
-      3. Run '...'
-      4. See error...
-  validations:
-    required: false
-- type: textarea
-  attributes:
-    label: Environment
-    description: |
-      examples:
-        - **OS**: Ubuntu 22.04
-        - **Sonarr**: Sonarr 4.0.0.766
-        - **Docker Install**: Yes
-        - **Using Reverse Proxy**: No
-        - **Browser**: Firefox 90 (If UI related)
-        - **Database**: Sqlite 3.41.2
     value: |
-        - OS: 
-        - Sonarr: 
-        - Docker Install: 
-        - Using Reverse Proxy: 
-        - Browser: 
-        - Database: 
-    render: markdown
+      Thanks for taking the time to report this.
+
+      If the problem also happens on upstream Sonarr, it's probably better reported
+      [there](https://github.com/Sonarr/Sonarr/issues) — but if you're not sure, report it
+      here and we'll work it out.
+
+- type: textarea
+  attributes:
+    label: What happened
+    description: What you expected, and what you got instead.
   validations:
     required: true
+
+- type: input
+  attributes:
+    label: Series or release involved
+    description: >-
+      If it's about a specific show or a specific release name, put it here. Most bugs in
+      this fork turn out to be specific to one title's metadata, so this is usually the
+      single most useful thing in a report.
+    placeholder: e.g. One Piece (AniList), or [SubsPlease] Some Show - 12 (1080p)
+
 - type: dropdown
   attributes:
-    label: What branch are you running?
+    label: Metadata source
+    description: Which source is the series using, if relevant?
     options:
-      - Main
-      - Develop
-      - Other (This issue will be closed)
-  validations:
-    required: true
+      - Not relevant / don't know
+      - TheTVDB
+      - TMDB
+      - AniList
+      - MyAnimeList (Jikan)
+
 - type: textarea
   attributes:
-    label: Trace Logs
-    description: |
-      Trace Logs (https://wiki.servarr.com/sonarr/troubleshooting#logging-and-log-files) 
-      ***All bug reports must have trace logs provided, unless it's limited to a UI issue, in that case, logs from the development console are acceptable.***
-      *** Info Logs are not trace logs. If the logs do not say trace and are not from a file like `*.trace.*.txt` they are not trace logs.***
+    label: Logs
+    description: >-
+      Relevant lines from System → Logs. If you can reproduce it on demand, set the log
+      level to Debug or Trace under Settings → General first.
+    render: shell
+
+- type: input
+  attributes:
+    label: Version
+    description: Found under System → Status, or the image tag you pulled.
+    placeholder: e.g. v1.0.0, or ghcr.io/kakarottocake/sonarr-pro:latest
   validations:
     required: true
-- type: textarea
-  attributes:
-    label: Anything else
-    description: |
-      Links? Screenshots? References? Anything that will give us more context about the issue you are encountering!
-      Tip: You can attach images or log files by clicking this area to highlight it and then dragging files in.
-  validations:
-    required: false

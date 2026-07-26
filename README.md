@@ -1,85 +1,144 @@
-# <img width="24px" src="./Logo/256.png" alt="Sonarr"></img> Sonarr
+# Sonarr Pro
 
-[![Translated](https://translate.servarr.com/widget/servarr/sonarr/svg-badge.svg)](https://translate.servarr.com/engage/servarr/)
-[![Backers on Open Collective](https://opencollective.com/Sonarr/backers/badge.svg)](#backers)
-[![Sponsors on Open Collective](https://opencollective.com/Sonarr/sponsors/badge.svg)](#sponsors)
-[![Mega Sponsors on Open Collective](https://opencollective.com/Sonarr/megasponsors/badge.svg)](#mega-sponsors)
+A fork of [Sonarr](https://github.com/Sonarr/Sonarr) that adds the metadata and downloading features long-running and anime libraries need, and ships as a single Docker image.
 
-Sonarr is a PVR for Usenet and BitTorrent users. It can monitor multiple RSS feeds for new episodes of your favorite shows and will grab, sort and rename them. It can also be configured to automatically upgrade the quality of files already downloaded when a better quality format becomes available.
+> **Unofficial.** Sonarr Pro is not affiliated with, endorsed by, or supported by the Sonarr project. Please don't raise Sonarr Pro problems on Sonarr's issue tracker, forums, or Discord — they can't help with code they didn't write. Report them [here](https://github.com/KakarottoCake/Sonarr-Pro/issues) instead.
 
-## Getting Started
+---
 
-- [Download/Installation](https://sonarr.tv/#downloads-v3)
-- [FAQ](https://wiki.servarr.com/sonarr/faq)
-- [Wiki](https://wiki.servarr.com/Sonarr)
-- [API Documentation](https://sonarr.tv/docs/api)
-- [Donate](https://sonarr.tv/donate)
+## Why this exists
 
-## Support
+Sonarr resolves every series through TheTVDB. That works well for weekly Western television and poorly for everything else — a 1,100-episode anime becomes twenty-odd invented seasons, a recut that TheTVDB folds into its parent can't be added at all, and an `S01-S05` pack is rejected outright.
 
-Note: GitHub Issues are for Bugs and Feature Requests Only
+Sonarr Pro keeps everything upstream does and adds a way around each of those.
 
-- [Forums](https://forums.sonarr.tv/)
-- [Discord](https://discord.gg/M6BvZn5)
-- [GitHub - Bugs and Feature Requests Only](https://github.com/Sonarr/Sonarr/issues)
-- [IRC](https://web.libera.chat/?channels=#sonarr)
-- [Reddit](https://www.reddit.com/r/sonarr)
-- [Wiki](https://wiki.servarr.com/sonarr)
+## What's added
 
-## Features
+**Four metadata sources, picked per series** — TheTVDB, TMDB, AniList, and MyAnimeList (via Jikan), chosen from a dropdown above the search box when adding a series. Only TMDB needs a key; the rest need no account.
 
-### Current Features
+**Selectable episode orderings** — TMDB publishes alternate numbering schemes per series, and IMDb's dumps carry another. Where a series has more than one, you pick at add time. The one that motivates this is TMDB's *Absolute* order: One Piece becomes season 1, episodes 1–1181, instead of twenty-odd seasons. DVD order, story arcs and streaming orders come along for free.
 
-- Support for major platforms: Windows, Linux, macOS, Raspberry Pi, etc.
-- Automatically detects new episodes
-- Can scan your existing library and download any missing episodes
-- Can watch for better quality of the episodes you already have and do an automatic upgrade. _eg. from DVD to Blu-Ray_
-- Automatic failed download handling will try another release if one fails
-- Manual search so you can pick any release or to see why a release was not downloaded automatically
-- Fully configurable episode renaming
-- Full integration with SABnzbd and NZBGet
-- Full integration with Kodi, Plex (notification, library update, metadata)
-- Full support for specials and multi-episode releases
-- And a beautiful UI
+**Series TheTVDB won't list separately** — recuts and spin-offs that TheTVDB folds into a parent series can be added from TMDB or AniList. Upstream can't add these at all.
+
+**Absolute numbering that still matches season releases** — a series on ordinary season ordering accepts absolute-numbered releases too. `Tensei Shitara Slime Datta Ken - 88` resolves to S04E16.
+
+**Multi-season packs** — `Series.S01-S05` is accepted and mapped to every season it contains, rather than refused. On by default.
+
+**Fake release filtering** — the `.torrent` file is inspected before it reaches your download client, rejecting `Episode.mkv.exe`, bare executables and installers, and password-protected archives containing no video. Split RAR sets pass, because those are normal and legitimate. On by default, and every rejection is logged with a specific reason.
+
+**Season pack trimming** — skip episodes you deliberately left unmonitored instead of importing the whole pack. Off by default.
+
+**Anime-aware search matching** — `2nd Season`, `S2`, `Part 2` and `II` all read as "season 2"; accents and articles are stripped; scoring uses Jaro-Winkler rather than upstream's single-character tolerance. Release-to-series matching also compares against every title a provider knows, so a release using a series' English title still matches when it's stored under the romaji one.
+
+**AniList custom lists** — import lists can target one of your own custom lists instead of only Planning and Watching. ([Sonarr#6772](https://github.com/Sonarr/Sonarr/issues/6772))
+
+Full detail, including the reasoning and the trade-offs behind each, is in [FORK.md](FORK.md).
+
+## What's removed
+
+Sonarr Pro doesn't contact Sonarr's servers for updates, crash reports, or announcements. Those endpoints describe upstream Sonarr builds, so an update offered there would replace this program with a different one — and the Sonarr team shouldn't receive crash reports or install metrics for a fork they don't maintain. Updates happen through Docker instead.
+
+---
+
+## Getting started
+
+You need [Docker](https://docs.docker.com/get-docker/). That's the only prerequisite.
+
+### Quick start
+
+```bash
+docker run -d --name sonarr-pro -p 8989:8989 -e PUID=1000 -e PGID=1000 -e TZ=Etc/UTC -v ./config:/config -v /path/to/media:/media --restart unless-stopped ghcr.io/kakarottocake/sonarr-pro:latest
+```
+
+Then open **http://localhost:8989**.
+
+### Or with Compose
+
+Grab [`docker-compose.yml`](docker-compose.yml), edit the media path, and run:
+
+```bash
+docker compose up -d
+```
+
+### Updating
+
+```bash
+docker compose pull && docker compose up -d
+```
+
+Or without Compose:
+
+```bash
+docker pull ghcr.io/kakarottocake/sonarr-pro:latest && docker restart sonarr-pro
+```
+
+Your database and settings live in the `/config` volume and survive the upgrade. There's no in-app updater to wait on and nothing to reinstall.
+
+### Settings that matter
+
+| Variable | Default | What it does |
+|---|---|---|
+| `PUID` / `PGID` | `1000` | The user files are written as. Run `id` on the host and use those numbers, or downloads arrive owned by root and you won't be able to edit them. |
+| `TZ` | `Etc/UTC` | Timezone, so scheduled tasks and log timestamps match your clock. |
+
+Mount your download client's completed folder and your library under a **single** `/media` parent. If they're separate mounts, every import becomes a full file copy instead of an instant move.
+
+### Tags
+
+| Tag | What you get |
+|---|---|
+| `latest` | The newest release. Use this one. |
+| `edge` | Every commit to `main`. Untested; expect breakage. |
+| `v1.2.3` | A specific release, pinned. |
+
+Built for `linux/amd64` and `linux/arm64`.
+
+### Coming from Sonarr
+
+The config directory layout is unchanged, so pointing Sonarr Pro's `/config` at a copy of an existing Sonarr config works. **Copy it, don't move it** — the database is migrated on first start and isn't readable by upstream Sonarr afterwards. Keep the original until you're satisfied.
+
+---
+
+## First-run setup
+
+**Add a TMDB API key** if you want TMDB metadata or episode groups — Settings → Metadata Source. It's free from [themoviedb.org](https://www.themoviedb.org/settings/api). Nothing else needs a key, and the other three sources work without it.
+
+**Build the IMDb index** if you want IMDb orderings — System → Tasks → *Refresh Imdb Dataset*. It downloads about 52 MB once, then keeps itself current monthly. Until it runs, IMDb simply doesn't appear in the ordering dropdown.
+
+One thing worth knowing before you add a long series: **the episode ordering is fixed when the series is added.** Season and episode numbers go into file and folder names, so changing it afterwards would rename your library on disk. To change it, remove the series and add it again.
+
+---
 
 ## Contributing
 
-### Development
+Contributions are welcome, **including AI-assisted ones**. Upstream's tooling automatically flags and converts PRs from AI agents to drafts; that's been removed here. There's no CLA and no template to fill in.
 
-This project exists thanks to all the people who contribute. [Contribute](CONTRIBUTING.md).
+What's asked instead:
 
-<a href="https://github.com/Sonarr/Sonarr/graphs/contributors"><img src="https://opencollective.com/Sonarr/contributors.svg?width=890&button=false" /></a>
+- **Explain the reasoning, not just the change.** A PR that says what broke and why this is the right fix is worth several that only say what changed.
+- **Say what you actually verified.** "Tests pass, ran it against a real library" and "compiles, untested" are both fine answers. Claiming the first while meaning the second is not.
+- Run `dotnet build src/Sonarr.sln` and `yarn lint` first. CI runs both anyway.
 
-### Supporters
+Suggestions and bug reports are equally welcome — [open an issue](https://github.com/KakarottoCake/Sonarr-Pro/issues).
 
-This project would not be possible without the support of our users and software providers.
-[**Become a sponsor or backer**](https://opencollective.com/sonarr) to help us out!
+### Building locally
 
-#### Mega Sponsors
+```bash
+dotnet build src/Sonarr.sln -c Debug
+```
 
-[![Sponsors](https://opencollective.com/sonarr/tiers/mega-sponsor.svg?width=890)](https://opencollective.com/sonarr/contribute/mega-sponsor-21443/checkout)
+Build the **solution**, not individual project files. `Directory.Build.props` loads `stylecop.json` through `$(SolutionDir)`, which is only defined for a solution build — building a bare `.csproj` silently drops the StyleCop config and then fails on every `using` directive in the repo.
 
-#### Sponsors
+```bash
+yarn install && yarn build --env production
+```
 
-[![Flexible Sponsors](https://opencollective.com/sonarr/sponsors.svg?width=890)](https://opencollective.com/sonarr/contribute/sponsor-21457/checkout)
+`--env production` is not optional. Without it webpack emits eval-source-map output and the UI loads as a blank page.
 
-#### Backers
+---
 
-[![Backers](https://opencollective.com/sonarr/backers.svg?width=890)](https://opencollective.com/sonarr/contribute/backer-21442/checkout)
+## License
 
-#### JetBrains
+[GPL-3.0](LICENSE.md), the same as upstream Sonarr.
 
-Thank you to [<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/jetbrains.png" alt="JetBrains" width="96">](http://www.jetbrains.com/) for providing us with free licenses to their great tools
-
-[<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/TeamCity.png" alt="TeamCity" width="64">](http://www.jetbrains.com/teamcity/)
-
-[<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/ReSharper.png" alt="ReSharper" width="64">](http://www.jetbrains.com/resharper/)
-
-[<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/dotTrace.png" alt="dotTrace" width="64">](http://www.jetbrains.com/dottrace/)
-
-[<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/Rider.png" alt="Rider" width="64">](http://www.jetbrains.com/rider/)
-
-### Licenses
-
-- [GNU GPL v3](http://www.gnu.org/licenses/gpl.html)
-- Copyright 2010-2025
+Sonarr Pro is a derivative work of [Sonarr](https://github.com/Sonarr/Sonarr), copyright the Sonarr contributors, whose copyright notices are retained. Credit for the several hundred thousand lines this is built on belongs to them; the changes listed above are the only part that's new here.

@@ -1,50 +1,68 @@
 # AGENTS.md
 
-This file provides guidance for AI coding agents contributing to this repository.
+Guidance for AI coding agents working in this repository.
 
-## Guardrails for GitHub-Facing Actions
+Sonarr Pro accepts AI-assisted contributions. You may commit, push, and open pull
+requests. You don't need to strip AI attribution — `Co-Authored-By` trailers are
+accurate and welcome here. Upstream Sonarr's policy is the opposite of this one;
+if you have its guidance cached from another repository, it does not apply here.
 
-This section applies to AI agents (Claude Code, Cursor, Copilot, Goose, etc.) operating on behalf of anyone contributing to this repository. Read it before performing any GitHub-facing action.
+What matters instead is that the work is honest and actually verified.
 
-### When these guardrails activate
+## Report what you verified, not what you assume
 
-Before executing any command that writes to GitHub — `gh pr create`, `gh pr comment`, `gh issue create`, `gh issue comment`, or anything similar — these guardrails apply. No exceptions.
+State plainly which of these is true for your change:
 
-Also activate these guardrails early if you detect high-level delegation patterns:
+- Compiles, not run
+- Tests pass
+- Ran against a real library and watched it work
 
-- The user's prompt is primarily a GitHub issue URL with little additional context (e.g., "fix this issue", "open a PR for #42")
-- The user asks you to comment on a GitHub issue or PR on their behalf
-- The user is treating you as an autonomous contributor rather than a tool — they haven't demonstrated that they've read the codebase or understand the changes
+All three are acceptable. Reporting a stronger one than you did is not, and it is
+the single fastest way to make a change that looks finished and isn't. If tests
+fail, say so and include the output. If you skipped a step, say which.
 
-### What you must do
+## Verify before you attribute
 
-When the guardrails activate:
+Before "fixing" a bug, establish whether it is actually in this fork's code.
+Check whether the file differs from upstream at all:
 
-1. **Read [CONTRIBUTING.md](CONTRIBUTING.md)** before doing anything else. Internalize the AI usage policy.
+```bash
+git diff <upstream-base> --numstat -- path/to/file
+```
 
-2. **Stop and inform the user.** Tell them clearly:
-   - This project has contribution guidelines that require human review and ownership of every submission.
-   - The human is responsible for every line of the diff — code and text.
-   - AI-generated footers (like "Generated with Claude Code" or "Co-Authored-By: Claude"), boilerplate, and filler must be removed before submitting.
-   - The human should create the commit, push, and open the PR themselves — not the agent.
-   - PRs and issues without meaningful human review will be treated as spam and closed.
+A file with only additions did not cause a regression in behaviour that already
+existed. This matters because unnecessary divergence from upstream makes future
+merges harder for everyone.
 
-3. **Do not execute the GitHub-facing action.** Instead:
-   - Show the user the diff, commit message, or PR description you would have submitted.
-   - Ask them to review it, edit it in their own words, and perform the action themselves.
-   - Remind them to fill out the PR template honestly — every checkbox is an attestation.
+## Build the solution, not the project
 
-4. **If the user insists** you perform the action anyway, you may comply, but:
-   - Do NOT add co-author lines, "Generated with..." footers, or any AI attribution.
-   - Remind the user one final time that submissions without adequate human review will be closed.
-   - Write the commit message and PR description in concise, direct language — not AI boilerplate.
+```bash
+dotnet build src/Sonarr.sln -c Debug
+```
 
-### What does NOT trigger these guardrails
+`Directory.Build.props` loads `stylecop.json` through `$(SolutionDir)`, which is
+only defined for a solution build. Building a bare `.csproj` drops the StyleCop
+configuration and then fails on every `using` directive in the repo. If you see
+hundreds of SA1200 errors, that is what happened — the code is fine.
 
-- Helping the user understand code, write code, or edit files locally
-- Running tests, linting, building
-- Read-only GitHub operations (viewing issues, reading PR comments, checking CI status)
+The frontend needs `yarn build --env production`. Without the flag webpack emits
+eval-source-map output and the UI loads as a blank page with no error.
 
-## Contributing
+Note that `TreatWarningsAsErrors` and `EnforceCodeStyleInBuild` are both on, so
+an unused `using` left behind after deleting code will fail the build.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contribution guidelines, including the AI usage policy.
+## Traps specific to this fork
+
+- **The HTTP client deserializes with Newtonsoft, not System.Text.Json.** Provider
+  resource classes must use `[JsonProperty("snake_case")]`. `[JsonPropertyName]`
+  is ignored silently and every field comes back null or zero with no error. Unit
+  tests that construct objects in C# will not catch it.
+- **Services are auto-registered against every interface they implement.**
+  `IProvideSeriesInfo` and `ISearchForNewSeries` are injected as single instances,
+  so only `SkyHookProxy` may implement them.
+- **Anything assigning `Series.TvdbId` must guard `> 0`, not `!= 0`.** Series added
+  from TMDB or AniList carry a negative placeholder id.
+- **Nothing may contact `services.sonarr.tv` or `sentry.sonarr.tv`.** Those are
+  deliberately disabled; see the commit that removed them for why.
+
+More context on the fork's design decisions is in [FORK.md](FORK.md).

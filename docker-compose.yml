@@ -1,0 +1,24 @@
+services:
+  sonarr-pro:
+    image: ghcr.io/kakarottocake/sonarr-pro:latest
+    container_name: sonarr-pro
+    restart: unless-stopped
+
+    ports:
+      - "8989:8989"
+
+    environment:
+      # Files are written as this user. Run "id" on the host and use the numbers it
+      # prints, otherwise downloads land as root and the host account cannot edit them.
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+
+    volumes:
+      # Database, config.xml and logs. Back this up; everything else is replaceable.
+      - ./config:/config
+
+      # Media and downloads. Mount the download client's completed folder and the
+      # library under a single parent so imports are a move on one filesystem rather
+      # than a full copy across two.
+      - /path/to/media:/media
