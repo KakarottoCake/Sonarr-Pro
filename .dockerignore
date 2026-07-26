@@ -1,0 +1,35 @@
+# The backend stage copies the whole repo, so anything left here is both sent to the
+# daemon on every build and liable to be picked up instead of being rebuilt.
+
+# Build output. Stale artifacts from a host build would otherwise be copied into the
+# image and shadow what the container actually compiled.
+_output*
+_artifacts
+_temp*
+_testout
+obj/
+bin/
+**/obj/
+**/bin/
+
+# Reinstalled inside the image; a host copy is the wrong platform for Linux.
+node_modules
+
+.git
+.github
+.vs
+.vscode
+.idea
+.devcontainer
+
+*.user
+*.suo
+*.log
+
+# Documentation and packaging that do not affect the built image. LICENSE.md is
+# deliberately not excluded: the image is a binary distribution of GPL software and
+# ships its licence.
+docs/
+distribution/
+docker/tests/
+docker-compose.yml

@@ -18,8 +18,9 @@ WORKDIR /src
 COPY package.json yarn.lock .yarnrc ./
 RUN yarn install --frozen-lockfile --network-timeout 600000
 
+# tsconfig.json lives at the root and is resolved from there by the TypeScript loader.
+COPY tsconfig.json ./
 COPY frontend/ ./frontend/
-COPY src/NzbDrone.Core/Localization/Core/ ./src/NzbDrone.Core/Localization/Core/
 
 # --env production is what switches webpack out of eval-source-map. Without it the
 # bundle ships as tens of megabytes of dev output and the UI renders as a blank page.
@@ -83,6 +84,10 @@ RUN set -eux; \
 COPY --from=backend /app /app
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
+
+# This image is a binary distribution of GPLv3 software, so it carries its licence
+# and a pointer to the corresponding source.
+COPY LICENSE.md /app/LICENSE.md
 
 # /config holds the database, config.xml and logs. Everything else is media.
 VOLUME ["/config"]
