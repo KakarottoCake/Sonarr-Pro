@@ -27,6 +27,7 @@ namespace NzbDrone.Core.MetadataSource.Jikan
     {
         private const string BaseUrl = "https://api.jikan.moe/v4";
         private const int MaxEpisodePages = 30;
+        private const int MaxSearchResults = 20;
 
         private static readonly Regex DurationRegex = new Regex(@"(?<minutes>\d+)\s*min", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
@@ -80,7 +81,23 @@ namespace NzbDrone.Core.MetadataSource.Jikan
 
             while (page <= MaxEpisodePages)
             {
-                var response = Get<JikanEpisodeListResponse>($"/anime/{malId}/episodes?page={page}");
+                JikanEpisodeListResponse response;
+
+                try
+                {
+                    response = Get<JikanEpisodeListResponse>($"/anime/{malId}/episodes?page={page}");
+                }
+                catch (HttpException ex)
+                {
+                    // Jikan answers the episode list from MyAnimeList rather than its own
+                    // cache, and that call fails far more often than the series call does.
+                    // Refusing to add the series over it would make the source unusable
+                    // whenever MyAnimeList is unwell, so what was read so far is kept and
+                    // the rest is filled in from the declared count below.
+                    _logger.Warn(ex, "Unable to read the episode list for MyAnimeList series {0}, falling back to the episode count", malId);
+
+                    break;
+                }
 
                 if (response?.Data == null || response.Data.Count == 0)
                 {
@@ -98,6 +115,40 @@ namespace NzbDrone.Core.MetadataSource.Jikan
                 }
 
                 page++;
+            }
+
+            return FillMissingEpisodes(episodes, anime, runtime);
+        }
+
+        /// <summary>
+        /// Adds placeholders up to the count the series declares, for episodes the list did
+        /// not cover. They carry no title, which is the one thing this source is chosen for,
+        /// but numbering is what searching and importing rely on, and the titles arrive on a
+        /// later refresh once MyAnimeList answers again.
+        /// </summary>
+        private List<Episode> FillMissingEpisodes(List<Episode> episodes, JikanAnimeResource anime, int runtime)
+        {
+            var declared = anime.Episodes ?? 0;
+
+            if (declared <= episodes.Count)
+            {
+                return episodes;
+            }
+
+            _logger.Debug("Filling {0} episodes of {1} that the episode list did not cover", declared - episodes.Count, anime.MalId);
+
+            for (var number = episodes.Count + 1; number <= declared; number++)
+            {
+                episodes.Add(new Episode
+                {
+                    ForeignId = string.Format("{0}:{1}", anime.MalId, number),
+                    SeasonNumber = 1,
+                    EpisodeNumber = number,
+                    AbsoluteEpisodeNumber = number,
+                    Runtime = runtime,
+                    Monitored = true,
+                    Images = new List<MediaCover.MediaCover>()
+                });
             }
 
             return episodes;
@@ -188,6 +239,16 @@ namespace NzbDrone.Core.MetadataSource.Jikan
         }
 
         /// <summary>
+        /// Excludes adult entries, which the sfw query parameter used to do before it was
+        /// dropped for causing cache misses. MyAnimeList marks these "Rx - Hentai".
+        /// </summary>
+        private static bool IsSuitable(JikanAnimeResource anime)
+        {
+            return anime.Rating.IsNullOrWhiteSpace() ||
+                   !anime.Rating.StartsWith("Rx", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
         /// Jikan reports runtime as prose, for example "24 min per ep".
         /// </summary>
         private static int ParseDuration(string duration)
@@ -266,15 +327,23 @@ namespace NzbDrone.Core.MetadataSource.Jikan
 
             try
             {
-                // sfw excludes adult entries, which the other sources also leave out, so the
-                // three pickers do not return noticeably different things for the same query.
-                var response = Get<JikanSearchResponse>($"/anime?q={Uri.EscapeDataString(title.Trim())}&limit=20&sfw=true");
+                // Only the search term. Jikan caches by the whole query string and proxies a
+                // miss through to MyAnimeList, which frequently times out and answers 504,
+                // so every additional parameter measurably reduces the chance of an answer:
+                // "?q=naruto" is served while "?q=naruto&limit=20" is not. Trimming and
+                // filtering are done below instead, where they cost nothing.
+                var response = Get<JikanSearchResponse>($"/anime?q={Uri.EscapeDataString(title.Trim())}");
 
-                var results = response?.Data?.Select(MapSeries).ToList() ?? new List<Series>();
+                var results = response?.Data ?? new List<JikanAnimeResource>();
 
-                results.Sort(new SearchSeriesComparer(title));
+                var mapped = results.Where(IsSuitable)
+                                    .Take(MaxSearchResults)
+                                    .Select(MapSeries)
+                                    .ToList();
 
-                return results;
+                mapped.Sort(new SearchSeriesComparer(title));
+
+                return mapped;
             }
             catch (HttpException ex)
             {

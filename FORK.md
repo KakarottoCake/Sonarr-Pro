@@ -40,11 +40,25 @@ them, chosen from the dropdown above the search box on the Add New Series page.
 | AniList | Anime. Lists recuts, OVAs and specials separately, and knows every alternative title | nothing |
 | MyAnimeList (via Jikan) | Anime with per-episode titles, which AniList does not publish | nothing |
 
-Jikan is a free public mirror of MyAnimeList with no key and no account. It does
-go down, and when it does this source returns nothing rather than failing the
-page, so the other three stay usable. If MyAnimeList search comes back empty
-when the others do not, check <https://api.jikan.moe/v4/anime/1> before assuming
-the fork is at fault.
+Jikan is a free public mirror of MyAnimeList, with no key and no account.
+
+It answers from its own cache where it can and asks MyAnimeList otherwise, and
+that second path frequently times out with a 504. Two consequences worth
+knowing, both handled:
+
+- **Requests are kept as plain as possible**, because Jikan caches on the whole
+  query string. `?q=naruto` is answered from cache while `?q=naruto&limit=20` is
+  a different key, misses, and times out. Result trimming and the adult filter
+  are therefore done here rather than asked of the API.
+- **A series still adds when its episode list is unavailable.** The list comes
+  from MyAnimeList rather than the cache and fails more often than anything
+  else, so the episodes it does return are kept and the rest are filled in from
+  the count the series declares. Those arrive numbered but untitled, which is
+  enough to search and import; the titles appear on a later refresh.
+
+An uncached search may still come back empty while the other sources answer.
+Check <https://api.jikan.moe/v4/anime/1> to tell a MyAnimeList outage from a
+problem here.
 
 **A series is owned by exactly one source.** They are selected, not merged. This
 is deliberate and worth keeping: if two providers disagreed about how many
