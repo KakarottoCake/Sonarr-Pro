@@ -58,6 +58,9 @@ jobs:
   docker:
     name: Build image
     runs-on: ubuntu-latest
+    # Only on pull requests. A push to main is already built and published by the
+    # Docker workflow, and building it twice would just spend the runner minutes twice.
+    if: github.event_name == 'pull_request'
 
     steps:
       - uses: actions/checkout@v4

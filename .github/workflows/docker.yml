@@ -24,11 +24,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # arm64 is built under emulation on an amd64 runner, so the .NET compile for that
-      # architecture is slow. It is left in because most home servers that run this are
-      # a Raspberry Pi or an arm-based NAS.
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
+
+      # arm64 is built under emulation on an amd64 runner, which turns a .NET compile
+      # into a very long one. Releases get both architectures because plenty of people
+      # run this on a Pi or an arm NAS; the rolling "edge" tag gets amd64 only, so that
+      # an ordinary push to main does not spend an hour in QEMU.
+      - name: Choose platforms
+        id: platforms
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            echo "list=linux/amd64,linux/arm64" >> "$GITHUB_OUTPUT"
+          else
+            echo "list=linux/amd64" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -59,7 +69,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ steps.platforms.outputs.list }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
