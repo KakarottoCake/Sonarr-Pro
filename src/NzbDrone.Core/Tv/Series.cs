@@ -42,12 +42,9 @@ namespace NzbDrone.Core.Tv
 
         /// <summary>
         /// Other names the owning provider knows for this series: romanisations, regional
-        /// titles, and fan abbreviations. Populated on lookup and used to rank results, so a
-        /// search for "AoT" scores "Shingeki no Kyojin" on the name that was actually typed.
-        /// <para>
-        /// Not persisted. It exists for the duration of a lookup, and the scene mapping
-        /// service supplies alternate titles for series already in the library.
-        /// </para>
+        /// titles, and fan abbreviations. Used to rank search results, so a search for "AoT"
+        /// scores "Shingeki no Kyojin" on the name that was actually typed, and to match a
+        /// release named with one of them rather than the canonical title.
         /// </summary>
         public List<string> AlternateTitles { get; set; }
 

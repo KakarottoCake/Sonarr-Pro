@@ -3,6 +3,7 @@ using System.Linq;
 using Dapper;
 using NzbDrone.Core.Datastore;
 using NzbDrone.Core.Messaging.Events;
+using NzbDrone.Core.Parser;
 
 namespace NzbDrone.Core.Tv
 {
@@ -12,6 +13,7 @@ namespace NzbDrone.Core.Tv
         Series FindByTitle(string cleanTitle);
         Series FindByTitle(string cleanTitle, int year);
         List<Series> FindByTitleInexact(string cleanTitle);
+        Series FindByAlternateTitle(string cleanTitle);
         Series FindByTvdbId(int tvdbId);
         Series FindByTvRageId(int tvRageId);
         Series FindByImdbId(string imdbId);
@@ -51,6 +53,26 @@ namespace NzbDrone.Core.Tv
             var series = Query(s => s.CleanTitle == cleanTitle && s.Year == year).ToList();
 
             return ReturnSingleSeriesOrThrow(series);
+        }
+
+        /// <summary>
+        /// Finds a series by one of the other names its provider knows it by.
+        /// <para>
+        /// The titles are held as JSON, which no database here can index usefully, so the
+        /// comparison happens in memory. It only runs when a release did not match any
+        /// canonical title, and a personal library is small enough that the scan costs less
+        /// than the release being missed.
+        /// </para>
+        /// </summary>
+        public Series FindByAlternateTitle(string cleanTitle)
+        {
+            cleanTitle = cleanTitle.ToLowerInvariant();
+
+            var matches = All().Where(s => s.AlternateTitles != null &&
+                                           s.AlternateTitles.Any(t => t.CleanSeriesTitle() == cleanTitle))
+                               .ToList();
+
+            return ReturnSingleSeriesOrThrow(matches);
         }
 
         public List<Series> FindByTitleInexact(string cleanTitle)

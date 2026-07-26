@@ -104,7 +104,15 @@ namespace NzbDrone.Core.Tv
 
         public Series FindByTitle(string title)
         {
-            return _seriesRepository.FindByTitle(title.CleanSeriesTitle());
+            var cleanTitle = title.CleanSeriesTitle();
+
+            // Release groups name a series by whichever of its titles they prefer. AniList
+            // calls One Piece's Fish-Man Island recut "ONE PIECE: Gyojin Tou-hen", while
+            // releases of it are named "One Piece Log Fish-Man Island Saga", which is the
+            // English title the same provider publishes. Falling back to those names is
+            // still exact matching, just against more of them.
+            return _seriesRepository.FindByTitle(cleanTitle) ??
+                   _seriesRepository.FindByAlternateTitle(cleanTitle);
         }
 
         public Series FindByTitleInexact(string title)
