@@ -18,7 +18,16 @@ namespace NzbDrone.Core.MetadataSource.Imdb
 
     public interface IImdbIndexWriter
     {
-        void WriteSeries(int parentTconst, IReadOnlyList<ImdbEpisodeEntry> episodes);
+        /// <summary>
+        /// Stages one row. Rows may arrive in any order; <see cref="PackStagedRows"/> groups
+        /// them afterwards.
+        /// </summary>
+        void StageEpisode(int parentTconst, ImdbEpisodeEntry episode);
+
+        /// <summary>
+        /// Groups the staged rows by series and packs each into its blob.
+        /// </summary>
+        void PackStagedRows();
     }
 
     /// <summary>
@@ -39,6 +48,7 @@ namespace NzbDrone.Core.MetadataSource.Imdb
     {
         private const string EpisodeTable = "SeriesEpisodes";
         private const string MetaTable = "IndexMeta";
+        private const string StagingTable = "StagingEpisodes";
 
         private readonly IAppFolderInfo _appFolderInfo;
         private readonly IDiskProvider _diskProvider;
@@ -158,6 +168,15 @@ namespace NzbDrone.Core.MetadataSource.Imdb
                         }
 
                         transaction.Commit();
+
+                        // Dropping the staging table frees its pages inside the file but
+                        // does not shrink the file, which leaves it several times larger
+                        // than the data it holds. VACUUM rewrites it compactly, and cannot
+                        // run inside a transaction.
+                        using var vacuum = connection.CreateCommand();
+
+                        vacuum.CommandText = "VACUUM";
+                        vacuum.ExecuteNonQuery();
                     }
 
                     // Pooled connections keep the file handle open, which blocks the move.
@@ -209,34 +228,114 @@ namespace NzbDrone.Core.MetadataSource.Imdb
 
             command.CommandText = $@"
                 CREATE TABLE ""{EpisodeTable}"" (""ParentTconst"" INTEGER PRIMARY KEY, ""Packed"" BLOB NOT NULL);
-                CREATE TABLE ""{MetaTable}"" (""Key"" TEXT PRIMARY KEY, ""Value"" TEXT NOT NULL);";
+                CREATE TABLE ""{MetaTable}"" (""Key"" TEXT PRIMARY KEY, ""Value"" TEXT NOT NULL);
+                CREATE TABLE ""{StagingTable}"" (""ParentTconst"" INTEGER NOT NULL, ""Tconst"" INTEGER NOT NULL, ""SeasonNumber"" INTEGER NOT NULL, ""EpisodeNumber"" INTEGER NOT NULL);";
 
             command.ExecuteNonQuery();
         }
 
+        /// <summary>
+        /// Stages rows to disk and groups them with a sorted read afterwards.
+        /// <para>
+        /// The dump is ordered by episode id rather than by series, so a series' rows are
+        /// scattered through it and cannot be grouped as they stream past. Collecting them
+        /// in a dictionary first works but holds nine million entries at once, which trebles
+        /// the process's memory for the duration and is a poor thing to do on the small
+        /// machines this tends to run on. Letting SQLite do the sort keeps the peak to a
+        /// single series.
+        /// </para>
+        /// </summary>
         private sealed class Writer : IImdbIndexWriter
         {
-            private readonly SQLiteCommand _episodeCommand;
+            private readonly SQLiteConnection _connection;
+            private readonly SQLiteTransaction _transaction;
+            private readonly SQLiteCommand _stageCommand;
 
             public Writer(SQLiteConnection connection, SQLiteTransaction transaction)
             {
-                _episodeCommand = connection.CreateCommand();
-                _episodeCommand.Transaction = transaction;
-                _episodeCommand.CommandText = $"INSERT OR REPLACE INTO \"{EpisodeTable}\" (\"ParentTconst\", \"Packed\") VALUES (@parent, @packed)";
-                _episodeCommand.Parameters.Add("@parent", System.Data.DbType.Int32);
-                _episodeCommand.Parameters.Add("@packed", System.Data.DbType.Binary);
+                _connection = connection;
+                _transaction = transaction;
+
+                _stageCommand = connection.CreateCommand();
+                _stageCommand.Transaction = transaction;
+                _stageCommand.CommandText = $"INSERT INTO \"{StagingTable}\" (\"ParentTconst\", \"Tconst\", \"SeasonNumber\", \"EpisodeNumber\") VALUES (@parent, @tconst, @season, @episode)";
+                _stageCommand.Parameters.Add("@parent", System.Data.DbType.Int32);
+                _stageCommand.Parameters.Add("@tconst", System.Data.DbType.Int32);
+                _stageCommand.Parameters.Add("@season", System.Data.DbType.Int32);
+                _stageCommand.Parameters.Add("@episode", System.Data.DbType.Int32);
             }
 
-            public void WriteSeries(int parentTconst, IReadOnlyList<ImdbEpisodeEntry> episodes)
+            public void StageEpisode(int parentTconst, ImdbEpisodeEntry episode)
             {
-                _episodeCommand.Parameters["@parent"].Value = parentTconst;
-                _episodeCommand.Parameters["@packed"].Value = ImdbEpisodePacker.Pack(episodes);
-                _episodeCommand.ExecuteNonQuery();
+                _stageCommand.Parameters["@parent"].Value = parentTconst;
+                _stageCommand.Parameters["@tconst"].Value = episode.Tconst;
+                _stageCommand.Parameters["@season"].Value = episode.SeasonNumber;
+                _stageCommand.Parameters["@episode"].Value = episode.EpisodeNumber;
+                _stageCommand.ExecuteNonQuery();
+            }
+
+            public void PackStagedRows()
+            {
+                using var insert = _connection.CreateCommand();
+
+                insert.Transaction = _transaction;
+                insert.CommandText = $"INSERT OR REPLACE INTO \"{EpisodeTable}\" (\"ParentTconst\", \"Packed\") VALUES (@parent, @packed)";
+                insert.Parameters.Add("@parent", System.Data.DbType.Int32);
+                insert.Parameters.Add("@packed", System.Data.DbType.Binary);
+
+                using var select = _connection.CreateCommand();
+
+                select.Transaction = _transaction;
+
+                // Sorted by season and episode within each series so the packed order is the
+                // reading order, and so consecutive ids compress well.
+                select.CommandText = $"SELECT \"ParentTconst\", \"Tconst\", \"SeasonNumber\", \"EpisodeNumber\" FROM \"{StagingTable}\" ORDER BY \"ParentTconst\", \"SeasonNumber\", \"EpisodeNumber\"";
+
+                var current = 0;
+                var episodes = new List<ImdbEpisodeEntry>();
+
+                using (var reader = select.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        var parent = reader.GetInt32(0);
+
+                        if (parent != current)
+                        {
+                            Write(insert, current, episodes);
+
+                            current = parent;
+                            episodes.Clear();
+                        }
+
+                        episodes.Add(new ImdbEpisodeEntry(reader.GetInt32(1), reader.GetInt32(2), reader.GetInt32(3)));
+                    }
+                }
+
+                Write(insert, current, episodes);
+
+                using var drop = _connection.CreateCommand();
+
+                drop.Transaction = _transaction;
+                drop.CommandText = $"DROP TABLE \"{StagingTable}\"";
+                drop.ExecuteNonQuery();
+            }
+
+            private static void Write(SQLiteCommand insert, int parentTconst, List<ImdbEpisodeEntry> episodes)
+            {
+                if (parentTconst == 0 || episodes.Count == 0)
+                {
+                    return;
+                }
+
+                insert.Parameters["@parent"].Value = parentTconst;
+                insert.Parameters["@packed"].Value = ImdbEpisodePacker.Pack(episodes);
+                insert.ExecuteNonQuery();
             }
 
             public void Flush()
             {
-                _episodeCommand.Dispose();
+                _stageCommand.Dispose();
             }
         }
     }

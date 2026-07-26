@@ -20,6 +20,7 @@ namespace NzbDrone.Core.Tv
             OriginalLanguage = Language.English;
             MalIds = new HashSet<int>();
             AniListIds = new HashSet<int>();
+            AlternateTitles = new List<string>();
         }
 
         public int TvdbId { get; set; }
@@ -38,6 +39,17 @@ namespace NzbDrone.Core.Tv
         /// The identifier the owning provider uses for this series.
         /// </summary>
         public string ForeignId { get; set; }
+
+        /// <summary>
+        /// Other names the owning provider knows for this series: romanisations, regional
+        /// titles, and fan abbreviations. Populated on lookup and used to rank results, so a
+        /// search for "AoT" scores "Shingeki no Kyojin" on the name that was actually typed.
+        /// <para>
+        /// Not persisted. It exists for the duration of a lookup, and the scene mapping
+        /// service supplies alternate titles for series already in the library.
+        /// </para>
+        /// </summary>
+        public List<string> AlternateTitles { get; set; }
 
         /// <summary>
         /// The episode ordering this series was added with, such as a TMDB episode group id.

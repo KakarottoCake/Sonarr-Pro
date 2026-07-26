@@ -24,6 +24,60 @@ namespace NzbDrone.Core.Test.MetadataSource
             _series.Add(new Series { Title = title });
         }
 
+        private void WithSeries(string title, params string[] alternateTitles)
+        {
+            _series.Add(new Series { Title = title, AlternateTitles = alternateTitles.ToList() });
+        }
+
+        [Test]
+        public void should_rank_on_an_alternate_title_when_that_is_what_was_typed()
+        {
+            // AniList returns the series because it matched a synonym server-side. Ranking
+            // on the canonical title alone would then put it last, which is the opposite of
+            // what the person searching expects.
+            WithSeries("Attack on Titan Junior High");
+            WithSeries("Shingeki no Kyojin", "Attack on Titan", "AoT", "SnK");
+
+            _series.Sort(new SearchSeriesComparer("AoT"));
+
+            _series.First().Title.Should().Be("Shingeki no Kyojin");
+        }
+
+        [Test]
+        public void should_rank_on_an_english_alternate_title()
+        {
+            WithSeries("Attack of the Killer Tomatoes");
+            WithSeries("Shingeki no Kyojin", "Attack on Titan");
+
+            _series.Sort(new SearchSeriesComparer("attack on titan"));
+
+            _series.First().Title.Should().Be("Shingeki no Kyojin");
+        }
+
+        [Test]
+        public void should_still_prefer_a_canonical_title_match_over_a_weaker_synonym()
+        {
+            WithSeries("Steins;Gate 0", "Zero");
+            WithSeries("Steins;Gate", "STEINS;GATE");
+
+            _series.Sort(new SearchSeriesComparer("steins gate"));
+
+            _series.First().Title.Should().Be("Steins;Gate");
+        }
+
+        [Test]
+        public void should_handle_a_series_with_no_alternate_titles()
+        {
+            // Series from providers that publish none, and anything constructed elsewhere,
+            // must not trip the comparer.
+            _series.Add(new Series { Title = "Breaking Bad", AlternateTitles = null });
+            WithSeries("Breaking In");
+
+            _series.Sort(new SearchSeriesComparer("breaking bad"));
+
+            _series.First().Title.Should().Be("Breaking Bad");
+        }
+
         [Test]
         public void should_prefer_the_walking_dead_over_talking_dead_when_searching_for_the_walking_dead()
         {

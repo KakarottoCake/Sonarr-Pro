@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using NLog;
 using NzbDrone.Common.Http;
@@ -77,41 +76,25 @@ namespace NzbDrone.Core.MetadataSource.Imdb
         }
 
         /// <summary>
-        /// The dump is ordered by episode id rather than by series, so rows for one series
-        /// are scattered. They are gathered in memory keyed by series, which is the only
-        /// part of the process that holds much at once: the ids alone, not the text.
+        /// Streams the dump straight to disk and lets the index group it afterwards, rather
+        /// than gathering nine million rows in memory to group them here.
         /// </summary>
         private void ImportEpisodes(string path, IImdbIndexWriter writer)
         {
-            var grouped = new Dictionary<int, List<ImdbEpisodeEntry>>();
+            var count = 0;
 
             using (var stream = File.OpenRead(path))
             {
                 foreach (var (parent, episode) in ImdbTsvReader.ReadEpisodes(stream))
                 {
-                    if (!grouped.TryGetValue(parent, out var list))
-                    {
-                        list = new List<ImdbEpisodeEntry>();
-                        grouped[parent] = list;
-                    }
-
-                    list.Add(episode);
+                    writer.StageEpisode(parent, episode);
+                    count++;
                 }
             }
 
-            _logger.Debug("Read episodes for {0} series from the IMDb dataset", grouped.Count);
+            _logger.Debug("Read {0} episodes from the IMDb dataset", count);
 
-            foreach (var pair in grouped)
-            {
-                pair.Value.Sort((a, b) =>
-                {
-                    var season = a.SeasonNumber.CompareTo(b.SeasonNumber);
-
-                    return season != 0 ? season : a.EpisodeNumber.CompareTo(b.EpisodeNumber);
-                });
-
-                writer.WriteSeries(pair.Key, pair.Value);
-            }
+            writer.PackStagedRows();
         }
 
         private string Download(string url)

@@ -9,8 +9,6 @@ namespace NzbDrone.Core.MetadataSource
     {
         IMetadataProvider GetProvider(Series series);
         IMetadataProvider GetProvider(MetadataSourceType source);
-        IMetadataProvider DefaultProvider { get; }
-        List<IMetadataProvider> All();
     }
 
     public class MetadataProviderFactory : IMetadataProviderFactory
@@ -26,16 +24,9 @@ namespace NzbDrone.Core.MetadataSource
             _logger = logger;
         }
 
-        public IMetadataProvider DefaultProvider => GetProvider(DefaultSource);
-
-        public List<IMetadataProvider> All()
-        {
-            return _providers.ToList();
-        }
-
         public IMetadataProvider GetProvider(Series series)
         {
-            return series == null ? DefaultProvider : GetProvider(series.MetadataSource);
+            return GetProvider(series?.MetadataSource ?? DefaultSource);
         }
 
         public IMetadataProvider GetProvider(MetadataSourceType source)

@@ -190,7 +190,7 @@ namespace NzbDrone.Core.MetadataSource.Jikan
         /// <summary>
         /// Jikan reports runtime as prose, for example "24 min per ep".
         /// </summary>
-        public static int ParseDuration(string duration)
+        private static int ParseDuration(string duration)
         {
             if (duration.IsNullOrWhiteSpace())
             {

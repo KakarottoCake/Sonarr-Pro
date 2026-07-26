@@ -76,7 +76,45 @@ namespace NzbDrone.Core.MetadataSource
             // routinely differ from what is typed by more than an edit distance tolerates,
             // whether romanised differently, abbreviated, or with the season written another
             // way. Negated because the sort is ascending and a higher score is better.
-            return Compare(x, y, s => -(SeriesTitleMatcher.Score(SearchQuery, s.Title) + (GetYearFactor(s) / 100.0)));
+            result = Compare(x, y, s => -(BestTitleScore(s) + (GetYearFactor(s) / 100.0)));
+
+            if (result != 0)
+            {
+                return result;
+            }
+
+            // Franchises share an abbreviation: every special and spin-off of Shingeki no
+            // Kyojin also answers to "AoT", so they all match the query equally well and the
+            // name alone cannot separate them. How many people rated a series is the
+            // available stand-in for which one they meant.
+            return Compare(x, y, s => -(s.Ratings?.Votes ?? 0));
+        }
+
+        /// <summary>
+        /// Scores against every name the provider knows, not just the canonical one. Someone
+        /// searching "AoT" typed a name that only appears among the synonyms, and scoring
+        /// "Shingeki no Kyojin" against it alone would rank the right series last.
+        /// </summary>
+        private double BestTitleScore(Series series)
+        {
+            var best = SeriesTitleMatcher.Score(SearchQuery, series.Title);
+
+            if (series.AlternateTitles == null)
+            {
+                return best;
+            }
+
+            foreach (var title in series.AlternateTitles)
+            {
+                var score = SeriesTitleMatcher.Score(SearchQuery, title);
+
+                if (score > best)
+                {
+                    best = score;
+                }
+            }
+
+            return best;
         }
 
         public int Compare<T>(Series x, Series y, Func<Series, T> keySelector)

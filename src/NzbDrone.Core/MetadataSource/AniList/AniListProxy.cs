@@ -118,6 +118,11 @@ namespace NzbDrone.Core.MetadataSource.AniList
                 AniListIds = new HashSet<int> { media.Id },
                 Title = titles.FirstOrDefault() ?? "Unknown",
 
+                // The rest are what release groups and people actually type. Ranking on the
+                // canonical title alone buries a series searched for by its English name or
+                // a fan abbreviation.
+                AlternateTitles = titles.Skip(1).ToList(),
+
                 // AniList entries are single-run anime, which is what SeriesTypes.Anime
                 // means to the rest of Sonarr: absolute numbering, anime release parsing.
                 SeriesType = SeriesTypes.Anime,
