@@ -15,8 +15,11 @@ Three things need doing before the new features do anything.
 1. **TMDB API key** — Settings → Metadata Source. Free from
    <https://www.themoviedb.org/settings/api>. Without it, TMDB metadata and
    episode groups are silently unavailable; everything else works.
-2. **IMDb index** — run the `RefreshImdbDataset` command once. Downloads ~52MB
-   and builds a ~45MB local index. Until then IMDb ordering does not appear.
+2. **IMDb index** — System → Tasks → Refresh Imdb Dataset, run once. Downloads
+   ~52MB and builds a ~45MB local index; until then IMDb ordering does not
+   appear in the dropdown. After that it refreshes itself monthly. The scheduled
+   run deliberately does nothing until the index exists, so the download only
+   ever happens because someone asked for it.
 3. **Skip Unmonitored Episodes In Packs** — Settings → Media Management, off by
    default. See below for why.
 
@@ -35,7 +38,13 @@ them, chosen from the dropdown above the search box on the Add New Series page.
 | TheTVDB | Default. Scene mappings, which the indexer ecosystem is built on | nothing |
 | TMDB | Artwork, episode groups, IMDb ids | API key |
 | AniList | Anime. Lists recuts, OVAs and specials separately, and knows every alternative title | nothing |
-| Jikan (MyAnimeList) | Anime with per-episode titles, which AniList does not publish | nothing |
+| MyAnimeList (via Jikan) | Anime with per-episode titles, which AniList does not publish | nothing |
+
+Jikan is a free public mirror of MyAnimeList with no key and no account. It does
+go down, and when it does this source returns nothing rather than failing the
+page, so the other three stay usable. If MyAnimeList search comes back empty
+when the others do not, check <https://api.jikan.moe/v4/anime/1> before assuming
+the fork is at fault.
 
 **A series is owned by exactly one source.** They are selected, not merged. This
 is deliberate and worth keeping: if two providers disagreed about how many

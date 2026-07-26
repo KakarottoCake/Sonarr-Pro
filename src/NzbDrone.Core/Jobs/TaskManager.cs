@@ -16,6 +16,7 @@ using NzbDrone.Core.Lifecycle;
 using NzbDrone.Core.MediaFiles.Commands;
 using NzbDrone.Core.Messaging.Commands;
 using NzbDrone.Core.Messaging.Events;
+using NzbDrone.Core.MetadataSource.Imdb.Commands;
 using NzbDrone.Core.Tv.Commands;
 using NzbDrone.Core.Update.Commands;
 
@@ -107,6 +108,17 @@ namespace NzbDrone.Core.Jobs
                     {
                         Interval = 24 * 60,
                         TypeName = typeof(HousekeepingCommand).FullName
+                    },
+
+                    // Checked daily but only acts when the index is already present and a
+                    // month old, so it maintains itself once built without ever springing a
+                    // fifty megabyte download on someone who has not asked for it. Being a
+                    // scheduled task is also how it becomes discoverable: it appears under
+                    // System, Tasks with a button to run it now.
+                    new ScheduledTask
+                    {
+                        Interval = 24 * 60,
+                        TypeName = typeof(RefreshImdbDatasetCommand).FullName
                     },
 
                     new ScheduledTask

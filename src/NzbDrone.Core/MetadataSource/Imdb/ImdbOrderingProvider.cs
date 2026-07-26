@@ -115,6 +115,15 @@ namespace NzbDrone.Core.MetadataSource.Imdb
 
         public void Execute(RefreshImdbDatasetCommand message)
         {
+            // Run from System, Tasks or the API, the user asked for it, so build regardless.
+            // On the daily schedule, only refresh an index that already exists and has gone
+            // stale: nobody should discover this feature by way of an unexplained fifty
+            // megabyte download.
+            if (message.Trigger != CommandTrigger.Manual && !_datasetService.ShouldRefreshOnSchedule())
+            {
+                return;
+            }
+
             _datasetService.BuildIndex();
         }
     }

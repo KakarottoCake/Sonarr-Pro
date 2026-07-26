@@ -23,6 +23,10 @@ const METADATA_SOURCES: { key: MetadataSource; value: string }[] = [
   { key: 'tvdb', value: 'TheTVDB' },
   { key: 'tmdb', value: 'TMDB' },
   { key: 'aniList', value: 'AniList' },
+
+  // Offered alongside AniList rather than instead of it: AniList knows more
+  // alternative titles, but only MyAnimeList publishes per-episode titles.
+  { key: 'myAnimeList', value: 'MyAnimeList' },
 ];
 
 function AddNewSeries() {

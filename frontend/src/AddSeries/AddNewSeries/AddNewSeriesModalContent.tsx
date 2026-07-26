@@ -67,7 +67,7 @@ function AddNewSeriesModalContent({
   // translated back on submit.
   const [orderingId, setOrderingId] = useState('');
 
-  const { data: orderings } = useEpisodeOrderings(series.tmdbId);
+  const { data: orderings } = useEpisodeOrderings(series.tmdbId, series.imdbId);
 
   const orderingOptions = useMemo(() => {
     return orderings.map((ordering) => ({

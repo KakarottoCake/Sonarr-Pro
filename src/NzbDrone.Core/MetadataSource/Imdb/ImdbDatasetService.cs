@@ -10,7 +10,7 @@ namespace NzbDrone.Core.MetadataSource.Imdb
     public interface IImdbDatasetService
     {
         void BuildIndex();
-        bool IsStale();
+        bool ShouldRefreshOnSchedule();
     }
 
     /// <summary>
@@ -41,11 +41,16 @@ namespace NzbDrone.Core.MetadataSource.Imdb
             _logger = logger;
         }
 
-        public bool IsStale()
+        /// <summary>
+        /// True only when an index already exists and has aged out. A missing index means
+        /// the feature was never asked for, and building one unprompted would download fifty
+        /// megabytes for someone who may never use IMDb ordering.
+        /// </summary>
+        public bool ShouldRefreshOnSchedule()
         {
             var builtAt = _index.LastBuilt();
 
-            return builtAt == null || DateTime.UtcNow - builtAt.Value > MaxAge;
+            return builtAt != null && DateTime.UtcNow - builtAt.Value > MaxAge;
         }
 
         public void BuildIndex()

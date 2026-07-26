@@ -20,7 +20,7 @@ const DEFAULT_SERIES: AddSeries[] = [];
  * The metadata source searched, which becomes the source that owns any series added
  * from the results. A series is owned by exactly one provider.
  */
-export type MetadataSource = 'tvdb' | 'tmdb' | 'aniList';
+export type MetadataSource = 'tvdb' | 'tmdb' | 'aniList' | 'myAnimeList';
 
 interface LookupSeriesOptions {
   metadataSource?: MetadataSource;

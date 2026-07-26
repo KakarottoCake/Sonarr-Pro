@@ -9,6 +9,11 @@ namespace NzbDrone.Core.MetadataSource.Jikan.Resource
         public JikanAnimeResource Data { get; set; }
     }
 
+    public class JikanSearchResponse
+    {
+        public List<JikanAnimeResource> Data { get; set; }
+    }
+
     public class JikanAnimeResource
     {
         [JsonProperty("mal_id")]

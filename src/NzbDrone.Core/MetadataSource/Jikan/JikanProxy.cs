@@ -257,10 +257,33 @@ namespace NzbDrone.Core.MetadataSource.Jikan
             }
         }
 
-        /// <summary>
-        /// Search is served by AniList, which has broader title coverage and no shared
-        /// rate limit. Jikan supplies episode detail once a series is identified.
-        /// </summary>
-        public List<Series> SearchForNewSeries(string title) => new List<Series>();
+        public List<Series> SearchForNewSeries(string title)
+        {
+            if (title.IsNullOrWhiteSpace())
+            {
+                return new List<Series>();
+            }
+
+            try
+            {
+                // sfw excludes adult entries, which the other sources also leave out, so the
+                // three pickers do not return noticeably different things for the same query.
+                var response = Get<JikanSearchResponse>($"/anime?q={Uri.EscapeDataString(title.Trim())}&limit=20&sfw=true");
+
+                var results = response?.Data?.Select(MapSeries).ToList() ?? new List<Series>();
+
+                results.Sort(new SearchSeriesComparer(title));
+
+                return results;
+            }
+            catch (HttpException ex)
+            {
+                // Jikan is a free shared service and does go down. An empty list leaves the
+                // other sources usable rather than failing the whole search.
+                _logger.Warn(ex, "MyAnimeList search for '{0}' failed", title);
+
+                return new List<Series>();
+            }
+        }
     }
 }
