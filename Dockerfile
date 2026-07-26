@@ -29,7 +29,7 @@ RUN yarn build --env production
 # ---------------------------------------------------------------------------
 # Backend
 # ---------------------------------------------------------------------------
-FROM mcr.microsoft.com/dotnet/sdk:10.0-bookworm-slim AS backend
+FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS backend
 
 ARG TARGETARCH
 WORKDIR /src
@@ -65,20 +65,17 @@ RUN set -eux; \
 # ---------------------------------------------------------------------------
 # Runtime
 # ---------------------------------------------------------------------------
-FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-bookworm-slim AS runtime
+FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-noble AS runtime
 
-# libicu backs .NET globalization; without it the app aborts on startup unless
-# invariant mode is forced, which would break locale-aware sorting and titles.
-# sqlite3 and ca-certificates cover the database and outbound HTTPS to the
-# metadata providers.
+# runtime-deps already carries what a self-contained .NET app needs to start —
+# ICU for globalization, ca-certificates for outbound HTTPS, tzdata — so only the
+# extras go here. gosu drops privileges in the entrypoint; libsqlite3-0 backs the
+# database.
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
-      libicu72 \
-      libsqlite3-0 \
-      ca-certificates \
       gosu \
-      tzdata; \
+      libsqlite3-0; \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=backend /app /app
