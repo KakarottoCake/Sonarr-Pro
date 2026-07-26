@@ -10,6 +10,7 @@ export interface MediaManagementSettingsModel {
   deleteEmptyFolders: boolean;
   episodeTitleRequired: string;
   skipFreeSpaceCheckWhenImporting: boolean;
+  skipUnmonitoredEpisodesFromPacks: boolean;
   minimumFreeSpaceWhenImporting: number;
   copyUsingHardlinks: boolean;
   useScriptImport: boolean;

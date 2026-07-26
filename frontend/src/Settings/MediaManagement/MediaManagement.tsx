@@ -266,6 +266,22 @@ function MediaManagement() {
                   />
                 </FormGroup>
 
+                <FormGroup size={sizes.MEDIUM}>
+                  <FormLabel>
+                    {translate('SkipUnmonitoredEpisodesFromPacks')}
+                  </FormLabel>
+
+                  <FormInputGroup
+                    type={inputTypes.CHECK}
+                    name="skipUnmonitoredEpisodesFromPacks"
+                    helpText={translate(
+                      'SkipUnmonitoredEpisodesFromPacksHelpText'
+                    )}
+                    onChange={handleInputChange}
+                    {...settings.skipUnmonitoredEpisodesFromPacks}
+                  />
+                </FormGroup>
+
                 <FormGroup
                   advancedSettings={showAdvancedSettings}
                   isAdvanced={true}

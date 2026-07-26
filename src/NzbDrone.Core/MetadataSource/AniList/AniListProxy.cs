@@ -259,7 +259,13 @@ namespace NzbDrone.Core.MetadataSource.AniList
                     return new List<Series>();
                 }
 
-                return results.Select(MapSeries).ToList();
+                var mapped = results.Select(MapSeries).ToList();
+
+                // AniList orders by its own popularity weighting, which buries an exact title
+                // match under better-known entries in the same franchise.
+                mapped.Sort(new SearchSeriesComparer(title));
+
+                return mapped;
             }
             catch (HttpException ex)
             {

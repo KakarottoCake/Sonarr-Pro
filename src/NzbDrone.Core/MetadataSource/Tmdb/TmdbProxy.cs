@@ -355,7 +355,11 @@ namespace NzbDrone.Core.MetadataSource.Tmdb
 
                 // Search results carry no seasons or external ids; those arrive when the
                 // series is fetched in full on add.
-                return response?.Results?.Select(MapSeries).ToList() ?? new List<Series>();
+                var results = response?.Results?.Select(MapSeries).ToList() ?? new List<Series>();
+
+                results.Sort(new SearchSeriesComparer(title));
+
+                return results;
             }
             catch (TmdbApiKeyMissingException)
             {

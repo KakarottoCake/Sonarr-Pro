@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using NzbDrone.Common.Extensions;
 using NzbDrone.Common.Serializer;
 using NzbDrone.Core.ImportLists.Exceptions;
 using NzbDrone.Core.Parser.Model;
@@ -41,7 +43,8 @@ namespace NzbDrone.Core.ImportLists.AniList.List
 
             // Anilist currently does not support filtering this at the query level, they will get filtered out here.
             var filtered = jsonResponse.Data.Page.MediaList
-                .Where(x => ValidateMediaStatus(x.Media));
+                .Where(x => ValidateMediaStatus(x.Media))
+                .Where(IsOnSelectedCustomList);
 
             foreach (var item in filtered)
             {
@@ -58,6 +61,30 @@ namespace NzbDrone.Core.ImportLists.AniList.List
 
             pageInfo = jsonResponse.Data.Page.PageInfo;
             return result;
+        }
+
+        /// <summary>
+        /// Restricts the list to one of the user's own custom lists, if they named one.
+        /// The standard lists such as Planning and Watching cover everything the user has
+        /// ever added, which is usually far more than they want Sonarr to manage.
+        /// </summary>
+        private bool IsOnSelectedCustomList(MediaList item)
+        {
+            if (_settings.CustomList.IsNullOrWhiteSpace())
+            {
+                return true;
+            }
+
+            if (item.CustomLists == null)
+            {
+                return false;
+            }
+
+            // AniList reports every list the user has defined on every entry, so the flag
+            // rather than the key's presence decides membership. Names are matched
+            // case-insensitively because the list name is typed by hand into settings.
+            return item.CustomLists
+                       .Any(l => l.Value && l.Key.Equals(_settings.CustomList.Trim(), StringComparison.OrdinalIgnoreCase));
         }
 
         private bool ValidateMediaStatus(MediaInfo media)

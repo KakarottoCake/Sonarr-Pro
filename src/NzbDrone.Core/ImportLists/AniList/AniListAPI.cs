@@ -26,6 +26,7 @@ namespace NzbDrone.Core.ImportLists.AniList
                     mediaList(userName: $id, type: ANIME, status_in: $statusType) {
                         status
                         progress
+                        customLists
                         media {
                             id
                             format
@@ -115,6 +116,13 @@ namespace NzbDrone.Core.ImportLists.AniList
         public string Status { get; set; }
 
         public int Progress { get; set; }
+
+        /// <summary>
+        /// The user's own lists, keyed by name, with a flag for whether this entry belongs
+        /// to each. AniList returns every list the user has defined on every entry, so
+        /// absence and false both mean "not on that list".
+        /// </summary>
+        public Dictionary<string, bool> CustomLists { get; set; }
     }
 
     public class MediaPage

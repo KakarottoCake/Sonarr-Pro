@@ -24,6 +24,7 @@ namespace NzbDrone.Core.Configuration
         bool AutoRedownloadFailedFromInteractiveSearch { get; set; }
         bool EnableFakeReleaseProtection { get; set; }
         bool EnableMultiSeasonReleases { get; set; }
+        bool SkipUnmonitoredEpisodesFromPacks { get; set; }
 
         // Metadata
         string TmdbApiKey { get; set; }

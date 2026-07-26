@@ -178,6 +178,15 @@ namespace NzbDrone.Core.Configuration
             set { SetValue("EnableMultiSeasonReleases", value); }
         }
 
+        // Off by default: it causes files to be skipped, and a file silently not appearing is
+        // harder to diagnose than one that was imported and is unwanted.
+        public bool SkipUnmonitoredEpisodesFromPacks
+        {
+            get { return GetValueBoolean("SkipUnmonitoredEpisodesFromPacks", false); }
+
+            set { SetValue("SkipUnmonitoredEpisodesFromPacks", value); }
+        }
+
         public bool CreateEmptySeriesFolders
         {
             get { return GetValueBoolean("CreateEmptySeriesFolders", false); }

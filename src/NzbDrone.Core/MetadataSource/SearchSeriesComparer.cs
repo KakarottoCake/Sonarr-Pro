@@ -72,7 +72,11 @@ namespace NzbDrone.Core.MetadataSource
                 return -result;
             }
 
-            return Compare(x, y, s => SearchQuery.LevenshteinDistanceClean(s.Title) - GetYearFactor(s));
+            // Falls through to a similarity score rather than an edit distance. Anime titles
+            // routinely differ from what is typed by more than an edit distance tolerates,
+            // whether romanised differently, abbreviated, or with the season written another
+            // way. Negated because the sort is ascending and a higher score is better.
+            return Compare(x, y, s => -(SeriesTitleMatcher.Score(SearchQuery, s.Title) + (GetYearFactor(s) / 100.0)));
         }
 
         public int Compare<T>(Series x, Series y, Func<Series, T> keySelector)
