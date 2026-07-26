@@ -85,9 +85,16 @@ namespace NzbDrone.Core.MetadataSource.AniList
         }
 
         /// <summary>
-        /// Every name AniList knows for a series, most canonical first and deduplicated.
-        /// Feeds release matching, where the alternative names matter more than the
-        /// canonical one because they are what appears in filenames.
+        /// Every name AniList knows for a series, in the order they are preferred, and
+        /// deduplicated. The first becomes the series title and the rest are kept for
+        /// matching releases, which name a series by whichever title they please.
+        /// <para>
+        /// English comes first because that is what the library is read in. AniList's own
+        /// preference is the romaji title, which reads as gibberish to anyone who does not
+        /// know the series, and it ends up in folder names. Romaji follows immediately, both
+        /// as the fallback where no English title exists and so that releases named in
+        /// romaji, which is most of them, still match.
+        /// </para>
         /// </summary>
         public static List<string> GetAllTitles(AniListMediaResource media)
         {
@@ -101,8 +108,8 @@ namespace NzbDrone.Core.MetadataSource.AniList
                 }
             }
 
-            Add(media.Title?.Romaji);
             Add(media.Title?.English);
+            Add(media.Title?.Romaji);
             Add(media.Title?.UserPreferred);
             Add(media.Title?.Native);
 

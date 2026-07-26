@@ -111,8 +111,10 @@ namespace NzbDrone.Core.Test.MetadataSource.AniList
         }
 
         [Test]
-        public void should_collect_every_known_title_with_romaji_first()
+        public void should_prefer_the_english_title()
         {
+            // AniList's own preference is romaji, which is what the library would otherwise
+            // be named in, including on disk.
             var media = new AniListMediaResource
             {
                 Id = 16498,
@@ -127,10 +129,49 @@ namespace NzbDrone.Core.Test.MetadataSource.AniList
 
             var titles = AniListEpisodeMapper.GetAllTitles(media);
 
-            titles.First().Should().Be("Shingeki no Kyojin");
-            titles.Should().Contain("Attack on Titan");
+            titles.First().Should().Be("Attack on Titan");
+        }
+
+        [Test]
+        public void should_keep_the_romaji_title_for_matching()
+        {
+            // Most releases are named in romaji, so it has to survive as an alternate or
+            // preferring English would stop them matching.
+            var media = new AniListMediaResource
+            {
+                Id = 16498,
+                Title = new AniListTitleResource
+                {
+                    Romaji = "Shingeki no Kyojin",
+                    English = "Attack on Titan",
+                    Native = "進撃の巨人"
+                },
+                Synonyms = new List<string> { "AoT", "SnK" }
+            };
+
+            var titles = AniListEpisodeMapper.GetAllTitles(media);
+
+            titles.Should().Contain("Shingeki no Kyojin");
             titles.Should().Contain("AoT");
             titles.Should().Contain("SnK");
+        }
+
+        [Test]
+        public void should_fall_back_to_romaji_when_there_is_no_english_title()
+        {
+            // Plenty of anime never gets an English title, and the series still needs a name.
+            var media = new AniListMediaResource
+            {
+                Id = 1,
+                Title = new AniListTitleResource
+                {
+                    Romaji = "Yofukashi no Uta",
+                    English = null,
+                    Native = "よふかしのうた"
+                }
+            };
+
+            AniListEpisodeMapper.GetAllTitles(media).First().Should().Be("Yofukashi no Uta");
         }
 
         [Test]
