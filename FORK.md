@@ -1,8 +1,12 @@
 # What this fork changes
 
-A personal fork of Sonarr. Everything below is additive: an untouched install
-behaves exactly as upstream does, because every new behaviour is either off by
-default or defaults to the path that already existed.
+The reasoning behind each of Sonarr Pro's changes, and the trade-offs they carry.
+[README.md](README.md) covers what the features are and how to install; this file
+covers why they work the way they do.
+
+Everything below is additive: an untouched install behaves exactly as upstream
+does, because every new behaviour is either off by default or defaults to the
+path that already existed.
 
 Forked from upstream `v5-develop` at `7e627f6`.
 
