@@ -252,6 +252,43 @@ namespace NzbDrone.Core.Test.TvTests
         }
 
         [Test]
+        public void should_keep_a_synthetic_tvdb_id_when_the_provider_reports_none()
+        {
+            // A series with no TheTVDB entry holds a negative placeholder id. Providers that
+            // do not map to TheTVDB report zero, and taking that would wipe the placeholder
+            // and break the unique-index invariant on the column.
+            _series.TvdbId = -1;
+
+            var newSeriesInfo = _series.JsonClone();
+            newSeriesInfo.TvdbId = 0;
+
+            GivenNewSeriesInfo(newSeriesInfo);
+
+            Subject.Execute(new RefreshSeriesCommand(new List<int> { _series.Id }));
+
+            Mocker.GetMock<ISeriesService>()
+                  .Verify(v => v.UpdateSeries(It.Is<Series>(s => s.TvdbId == -1), It.IsAny<bool>(), It.IsAny<bool>()));
+        }
+
+        [Test]
+        public void should_take_a_real_tvdb_id_when_the_provider_resolves_one()
+        {
+            _series.TvdbId = 100;
+
+            var newSeriesInfo = _series.JsonClone();
+            newSeriesInfo.TvdbId = 200;
+
+            GivenNewSeriesInfo(newSeriesInfo);
+
+            Subject.Execute(new RefreshSeriesCommand(new List<int> { _series.Id }));
+
+            Mocker.GetMock<ISeriesService>()
+                  .Verify(v => v.UpdateSeries(It.Is<Series>(s => s.TvdbId == 200), It.IsAny<bool>(), It.IsAny<bool>()));
+
+            ExceptionVerification.ExpectedWarns(1);
+        }
+
+        [Test]
         public void should_rescan_series_if_updating_fails()
         {
             _metadataProvider.Setup(s => s.GetSeriesInfo(It.IsAny<Series>()))

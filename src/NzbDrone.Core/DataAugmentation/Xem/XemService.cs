@@ -33,6 +33,14 @@ namespace NzbDrone.Core.DataAugmentation.Xem
 
         private void PerformUpdate(Series series)
         {
+            // XEM indexes by TheTVDB id and has nothing to say about a series that has no
+            // entry there, which carries a negative placeholder id.
+            if (series.TvdbId <= 0)
+            {
+                _logger.Debug("Scene numbering is not available for {0}, it has no TheTVDB entry", series.Title);
+                return;
+            }
+
             _logger.Debug("Updating scene numbering mapping for: {0}", series);
 
             try

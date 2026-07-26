@@ -83,7 +83,10 @@ namespace NzbDrone.Core.Tv
                 throw;
             }
 
-            if (series.TvdbId != seriesInfo.TvdbId)
+            // Only when the provider actually resolved an id. Providers that do not map to
+            // TheTVDB report zero, which would otherwise wipe the placeholder id allocated
+            // when the series was added and break its unique-index invariant on the next save.
+            if (seriesInfo.TvdbId > 0 && series.TvdbId != seriesInfo.TvdbId)
             {
                 _logger.Warn("Series '{0}' (tvdbid {1}) was replaced with '{2}' (tvdbid {3}), because the original was a duplicate.", series.Title, series.TvdbId, seriesInfo.Title, seriesInfo.TvdbId);
                 series.TvdbId = seriesInfo.TvdbId;

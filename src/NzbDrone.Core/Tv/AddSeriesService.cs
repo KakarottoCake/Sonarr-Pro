@@ -24,18 +24,21 @@ namespace NzbDrone.Core.Tv
     {
         private readonly ISeriesService _seriesService;
         private readonly IMetadataProviderFactory _metadataProviderFactory;
+        private readonly IAllocateSyntheticSeriesIds _syntheticSeriesIds;
         private readonly IBuildFileNames _fileNameBuilder;
         private readonly IAddSeriesValidator _addSeriesValidator;
         private readonly Logger _logger;
 
         public AddSeriesService(ISeriesService seriesService,
                                 IMetadataProviderFactory metadataProviderFactory,
+                                IAllocateSyntheticSeriesIds syntheticSeriesIds,
                                 IBuildFileNames fileNameBuilder,
                                 IAddSeriesValidator addSeriesValidator,
                                 Logger logger)
         {
             _seriesService = seriesService;
             _metadataProviderFactory = metadataProviderFactory;
+            _syntheticSeriesIds = syntheticSeriesIds;
             _fileNameBuilder = fileNameBuilder;
             _addSeriesValidator = addSeriesValidator;
             _logger = logger;
@@ -144,6 +147,13 @@ namespace NzbDrone.Core.Tv
             // ordering is the user's and is fixed for the life of the series, because season
             // and episode numbers appear in file and folder names.
             series.OrderingId = newSeries.OrderingId;
+
+            // A series the provider could not map to TheTVDB still needs a distinct value
+            // here, since the column is uniquely indexed and lookups expect a single match.
+            if (series.TvdbId == 0)
+            {
+                series.TvdbId = _syntheticSeriesIds.AllocateTvdbId();
+            }
 
             return series;
         }

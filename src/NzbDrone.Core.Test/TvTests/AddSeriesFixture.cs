@@ -175,6 +175,56 @@ namespace NzbDrone.Core.Test.TvTests
         }
 
         [Test]
+        public void should_allocate_a_synthetic_id_when_the_series_is_not_on_tvdb()
+        {
+            // Content TheTVDB folds into a parent series still needs a distinct value, since
+            // the column is uniquely indexed and lookups expect a single match.
+            _fakeSeries.TvdbId = 0;
+
+            _metadataProvider.Setup(s => s.GetSeriesInfo(It.IsAny<Series>()))
+                             .Returns(new Tuple<Series, List<Episode>>(_fakeSeries, new List<Episode>()));
+
+            Mocker.GetMock<IAllocateSyntheticSeriesIds>()
+                  .Setup(s => s.AllocateTvdbId())
+                  .Returns(-7);
+
+            GivenValidPath();
+
+            Subject.AddSeries(new Series
+            {
+                TvdbId = 0,
+                MetadataSource = MetadataSourceType.AniList,
+                ForeignId = "21",
+                RootFolderPath = @"C:\Test\TV"
+            });
+
+            Mocker.GetMock<ISeriesService>()
+                  .Verify(v => v.AddSeries(It.Is<Series>(s => s.TvdbId == -7)), Times.Once());
+        }
+
+        [Test]
+        public void should_not_allocate_a_synthetic_id_when_the_provider_resolved_a_real_one()
+        {
+            _fakeSeries.TvdbId = 73255;
+
+            _metadataProvider.Setup(s => s.GetSeriesInfo(It.IsAny<Series>()))
+                             .Returns(new Tuple<Series, List<Episode>>(_fakeSeries, new List<Episode>()));
+
+            GivenValidPath();
+
+            Subject.AddSeries(new Series
+            {
+                TvdbId = 0,
+                MetadataSource = MetadataSourceType.Tmdb,
+                ForeignId = "456",
+                RootFolderPath = @"C:\Test\TV"
+            });
+
+            Mocker.GetMock<IAllocateSyntheticSeriesIds>()
+                  .Verify(v => v.AllocateTvdbId(), Times.Never());
+        }
+
+        [Test]
         public void should_keep_the_id_resolved_by_the_provider_when_the_request_has_none()
         {
             // A series added from TMDB or AniList arrives without a TVDB id. The provider may

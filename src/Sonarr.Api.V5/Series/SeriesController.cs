@@ -12,6 +12,7 @@ using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.MediaFiles.Events;
 using NzbDrone.Core.Messaging.Commands;
 using NzbDrone.Core.Messaging.Events;
+using NzbDrone.Core.MetadataSource;
 using NzbDrone.Core.RootFolders;
 using NzbDrone.Core.SeriesStats;
 using NzbDrone.Core.Tv;
@@ -104,7 +105,26 @@ public class SeriesController : RestControllerWithSignalR<SeriesResource, NzbDro
             .SetValidator(qualityProfileExistsValidator);
 
         PostValidator.RuleFor(s => s.Title).NotEmpty();
-        PostValidator.RuleFor(s => s.TvdbId).GreaterThan(0).SetValidator(seriesExistsValidator);
+
+        // A series owned by another provider need not exist on TheTVDB at all, which is the
+        // case for content TheTVDB folds into a parent series but TMDB or AniList lists
+        // separately. Such a request identifies the series by ForeignId instead, and
+        // AddSeriesService allocates a placeholder TVDB id for it.
+        PostValidator.RuleFor(s => s.TvdbId)
+            .GreaterThan(0)
+            .SetValidator(seriesExistsValidator)
+            .When(s => s.MetadataSource == MetadataSourceType.Tvdb);
+
+        PostValidator.RuleFor(s => s.ForeignId)
+            .NotEmpty()
+            .When(s => s.MetadataSource != MetadataSourceType.Tvdb)
+            .WithMessage("A series from this metadata source must be identified by its foreign ID");
+
+        // Still rejected when a TVDB id is supplied alongside another provider, since adding
+        // the same series twice under different sources would duplicate it on disk.
+        PostValidator.RuleFor(s => s.TvdbId)
+            .SetValidator(seriesExistsValidator)
+            .When(s => s.MetadataSource != MetadataSourceType.Tvdb && s.TvdbId > 0);
     }
 
     [HttpGet]

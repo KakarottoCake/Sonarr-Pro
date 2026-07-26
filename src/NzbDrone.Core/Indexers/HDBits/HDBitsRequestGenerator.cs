@@ -138,7 +138,9 @@ namespace NzbDrone.Core.Indexers.HDBits
 
         private bool TryAddSearchParameters(TorrentQuery query, SearchCriteriaBase searchCriteria)
         {
-            if (searchCriteria.Series.TvdbId != 0)
+            // Positive, not merely non-zero: a series with no TheTVDB entry carries a
+            // negative placeholder id, which would mean nothing to the indexer.
+            if (searchCriteria.Series.TvdbId > 0)
             {
                 query.TvdbInfo ??= new TvdbInfo();
                 query.TvdbInfo.Id = searchCriteria.Series.TvdbId;

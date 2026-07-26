@@ -226,7 +226,10 @@ namespace NzbDrone.Core.Indexers.BroadcastheNet
 
         private bool AddSeriesSearchParameters(BroadcastheNetTorrentQuery parameters, SearchCriteriaBase searchCriteria)
         {
-            if (searchCriteria.Series.TvdbId != 0)
+            // Positive, not merely non-zero: a series with no TheTVDB entry carries a
+            // negative placeholder id, which would mean nothing to the indexer. Falling
+            // through leaves the search to run on the series title instead.
+            if (searchCriteria.Series.TvdbId > 0)
             {
                 parameters.Tvdb = $"{searchCriteria.Series.TvdbId}";
                 return true;
