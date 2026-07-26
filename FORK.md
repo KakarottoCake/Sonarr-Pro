@@ -151,16 +151,37 @@ Files already held at equal or better quality were already protected upstream.
 
 ---
 
-## Search
+## Search and matching
 
 Series lookup ranking now folds the many ways a season is written — `2nd
 Season`, `S2`, `Part 2`, `II` all read as "season 2" — strips accents and
 articles, and scores with Jaro-Winkler or word overlap. Upstream allowed a
-single character of difference, which is useless for anime.
+single character of difference, which is useless for anime. Where two entries
+match a name equally well, which happens across a franchise that shares an
+abbreviation, the more widely rated one comes first.
 
-This ranks lookup results only, where a person picks from a list. **Deciding
-which series a downloaded release belongs to is untouched**, because that runs
-unattended and a loose match there files episodes under the wrong series.
+The *ranking* is used only for lookup, where a person picks from a list.
+**Deciding which series a downloaded release belongs to is not loosened**,
+because it runs unattended and a bad match files episodes under the wrong
+series.
+
+What release matching did gain is more names to compare against exactly. A
+provider usually knows several titles for a series, and release groups pick
+whichever they prefer: AniList holds One Piece's Fish-Man Island recut under its
+romaji title, while releases of it use the English one. Both now match. A title
+belonging to nothing in the library still matches nothing.
+
+## Absolute and season numbering
+
+A series on ordinary season ordering also accepts absolute-numbered releases:
+`Tensei Shitara Slime Datta Ken - 88` resolves to S04E16, because every episode
+carries an absolute number regardless of which ordering was chosen.
+
+The reverse does not hold. A series added with an absolute ordering has no
+season 4, so an `S04E16` release matches the series and no episode. **Season
+ordering accepts both forms and is the more forgiving choice**; pick an absolute
+ordering when the releases being taken are absolute-numbered, or when the series
+is genuinely numbered that way, as One Piece is.
 
 ---
 
