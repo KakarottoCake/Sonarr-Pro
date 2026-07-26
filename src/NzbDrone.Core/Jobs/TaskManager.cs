@@ -18,7 +18,6 @@ using NzbDrone.Core.Messaging.Commands;
 using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.MetadataSource.Imdb.Commands;
 using NzbDrone.Core.Tv.Commands;
-using NzbDrone.Core.Update.Commands;
 
 namespace NzbDrone.Core.Jobs
 {
@@ -80,11 +79,8 @@ namespace NzbDrone.Core.Jobs
                         TypeName = typeof(MessagingCleanupCommand).FullName
                     },
 
-                    new ScheduledTask
-                    {
-                        Interval = 6 * 60,
-                        TypeName = typeof(ApplicationUpdateCheckCommand).FullName
-                    },
+                    // No scheduled update check: Sonarr Pro updates with "docker pull", and the
+                    // upstream update service only knows about upstream Sonarr builds.
 
                     new ScheduledTask
                     {

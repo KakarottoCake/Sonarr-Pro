@@ -6,7 +6,6 @@ using NLog.Config;
 using NLog.Targets;
 using NzbDrone.Common.EnvironmentInfo;
 using NzbDrone.Common.Extensions;
-using NzbDrone.Common.Instrumentation.Sentry;
 
 namespace NzbDrone.Common.Instrumentation
 {
@@ -45,7 +44,10 @@ namespace NzbDrone.Common.Instrumentation
                 RegisterDebugger();
             }
 
-            RegisterSentry(updateApp, appFolderInfo);
+            // Sonarr Pro does not register Sentry. Upstream ships crash reports to
+            // sentry.sonarr.tv, and stack traces from a fork's modified code would land in the
+            // Sonarr team's triage queue describing bugs that are not theirs and that they cannot
+            // act on. Crashes are recorded in the local log files instead.
 
             if (updateApp)
             {
@@ -64,52 +66,6 @@ namespace NzbDrone.Common.Instrumentation
             RegisterAuthLogger();
 
             LogManager.ReconfigExistingLoggers();
-        }
-
-        private static void RegisterSentry(bool updateClient, IAppFolderInfo appFolderInfo)
-        {
-            string dsn;
-
-            if (updateClient)
-            {
-                dsn = RuntimeInfo.IsProduction
-                    ? "https://80777986b95f44a1a90d1eb2f3af1e36@sentry.sonarr.tv/11"
-                    : "https://6168f0946aba4e60ac23e469ac08eac5@sentry.sonarr.tv/9";
-            }
-            else
-            {
-                dsn = RuntimeInfo.IsProduction
-                    ? "https://e2adcbe52caf46aeaebb6b1dcdfe10a1@sentry.sonarr.tv/8"
-                    : "https://4ee3580e01d8407c96a7430fbc953512@sentry.sonarr.tv/10";
-            }
-
-            Target target;
-            try
-            {
-                target = new SentryTarget(dsn, appFolderInfo)
-                {
-                    Name = "sentryTarget",
-                    Layout = "${message}"
-                };
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Failed to load dependency, may need an OS update: " + ex.ToString());
-                LogManager.GetLogger(nameof(NzbDroneLogger)).Debug(ex, "Failed to load dependency, may need an OS update");
-
-                // We still need the logging rules, so use a null target.
-                target = new NullTarget();
-            }
-
-            var loggingRule = new LoggingRule("*", updateClient ? LogLevel.Trace : LogLevel.Warn, target);
-            LogManager.Configuration.AddTarget("sentryTarget", target);
-            LogManager.Configuration.LoggingRules.Add(loggingRule);
-
-            // Events logged to Sentry go only to Sentry.
-            var loggingRuleSentry = new LoggingRule("Sentry", LogLevel.Debug, target) { Final = true };
-            LogManager.Configuration.LoggingRules.Insert(0, loggingRuleSentry);
-
-            target.Dispose();
         }
 
         private static void RegisterDebugger()
