@@ -339,11 +339,38 @@ namespace NzbDrone.Core.MetadataSource.Tmdb
             return response.Resource;
         }
 
-        /// <summary>
-        /// Title search is not implemented; series are discovered through the default
-        /// provider, which is what the add-series UI calls today. A series is pointed at
-        /// TMDB by its metadata source, not by being found here.
-        /// </summary>
-        public List<Series> SearchForNewSeries(string title) => new List<Series>();
+        public List<Series> SearchForNewSeries(string title)
+        {
+            if (title.IsNullOrWhiteSpace())
+            {
+                return new List<Series>();
+            }
+
+            try
+            {
+                var response = Get<TmdbSearchResponse>("/search/tv", new Dictionary<string, string>
+                {
+                    { "query", title }
+                });
+
+                // Search results carry no seasons or external ids; those arrive when the
+                // series is fetched in full on add.
+                return response?.Results?.Select(MapSeries).ToList() ?? new List<Series>();
+            }
+            catch (TmdbApiKeyMissingException)
+            {
+                // Nothing is configured yet, which is the normal state until a key is
+                // entered. Returning empty lets other providers still answer.
+                _logger.Debug("TMDB search skipped, no API key configured");
+
+                return new List<Series>();
+            }
+            catch (HttpException ex)
+            {
+                _logger.Warn(ex, "TMDB search for '{0}' failed", title);
+
+                return new List<Series>();
+            }
+        }
     }
 }

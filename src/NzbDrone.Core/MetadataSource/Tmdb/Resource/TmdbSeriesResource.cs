@@ -57,6 +57,11 @@ namespace NzbDrone.Core.MetadataSource.Tmdb.Resource
         public TmdbContentRatingsResource ContentRatings { get; set; }
     }
 
+    public class TmdbSearchResponse
+    {
+        public List<TmdbSeriesResource> Results { get; set; }
+    }
+
     public class TmdbGenreResource
     {
         public int Id { get; set; }

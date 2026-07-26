@@ -3,6 +3,21 @@
   margin-bottom: 10px;
 }
 
+.metadataSourceContainer {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.metadataSourceLabel {
+  margin-right: 10px;
+  color: var(--helpTextColor);
+}
+
+.metadataSourceSelect {
+  width: auto;
+}
+
 .searchIconContainer {
   width: 58px;
   height: 46px;

@@ -53,7 +53,7 @@ function ImportSeriesSelectSeries({
 
   const { isFetching, isFetched, error, data, refetch } = useLookupSeries(
     query,
-    isCurrentLookupQueueItem
+    { isEnabled: isCurrentLookupQueueItem }
   );
 
   const errorMessage = getErrorMessage(error);

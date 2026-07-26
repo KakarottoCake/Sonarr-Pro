@@ -16,11 +16,26 @@ interface AddSeriesPayload
 
 const DEFAULT_SERIES: AddSeries[] = [];
 
-export const useLookupSeries = (query: string, isEnabled = true) => {
+/**
+ * The metadata source searched, which becomes the source that owns any series added
+ * from the results. A series is owned by exactly one provider.
+ */
+export type MetadataSource = 'tvdb' | 'tmdb' | 'aniList';
+
+interface LookupSeriesOptions {
+  metadataSource?: MetadataSource;
+  isEnabled?: boolean;
+}
+
+export const useLookupSeries = (
+  query: string,
+  { metadataSource = 'tvdb', isEnabled = true }: LookupSeriesOptions = {}
+) => {
   const result = useApiQuery<AddSeries[]>({
     path: '/series/lookup',
     queryParams: {
       term: query,
+      metadataSource,
     },
     queryOptions: {
       enabled: isEnabled && !!query,

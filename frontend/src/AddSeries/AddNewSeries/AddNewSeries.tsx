@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Alert from 'Components/Alert';
+import SelectInput from 'Components/Form/SelectInput';
 import TextInput from 'Components/Form/TextInput';
 import Icon from 'Components/Icon';
 import Button from 'Components/Link/Button';
@@ -15,16 +16,31 @@ import { InputChanged } from 'typings/inputs';
 import getErrorMessage from 'Utilities/Object/getErrorMessage';
 import translate from 'Utilities/String/translate';
 import AddNewSeriesSearchResult from './AddNewSeriesSearchResult';
-import { useLookupSeries } from './useAddSeries';
+import { MetadataSource, useLookupSeries } from './useAddSeries';
 import styles from './AddNewSeries.css';
+
+const METADATA_SOURCES: { key: MetadataSource; value: string }[] = [
+  { key: 'tvdb', value: 'TheTVDB' },
+  { key: 'tmdb', value: 'TMDB' },
+  { key: 'aniList', value: 'AniList' },
+];
 
 function AddNewSeries() {
   const { term: initialTerm = '' } = useQueryParams<{ term: string }>();
   const hasSeries = useHasSeries();
   const [term, setTerm] = useState(initialTerm);
+  const [metadataSource, setMetadataSource] = useState<MetadataSource>('tvdb');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isFetching, setIsFetching] = useState(false);
   const query = useDebounce(term, term ? 300 : 0);
+
+  const handleMetadataSourceChange = useCallback(
+    ({ value }: InputChanged<string>) => {
+      setMetadataSource(value as MetadataSource);
+      setIsFetching(!!term.trim());
+    },
+    [term]
+  );
 
   const handleSearchInputChange = useCallback(
     ({ value }: InputChanged<string>) => {
@@ -40,7 +56,11 @@ function AddNewSeries() {
     searchInputRef.current?.focus();
   }, []);
 
-  const { isFetching: isFetchingApi, error, data } = useLookupSeries(query);
+  const {
+    isFetching: isFetchingApi,
+    error,
+    data,
+  } = useLookupSeries(query, { metadataSource });
 
   useEffect(() => {
     setIsFetching(isFetchingApi);
@@ -74,6 +94,20 @@ function AddNewSeries() {
           >
             <Icon name={icons.REMOVE} size={20} />
           </Button>
+        </div>
+
+        <div className={styles.metadataSourceContainer}>
+          <span className={styles.metadataSourceLabel}>
+            {translate('MetadataSource')}
+          </span>
+
+          <SelectInput
+            className={styles.metadataSourceSelect}
+            name="metadataSource"
+            value={metadataSource}
+            values={METADATA_SOURCES}
+            onChange={handleMetadataSourceChange}
+          />
         </div>
 
         {isFetching ? <LoadingIndicator /> : null}

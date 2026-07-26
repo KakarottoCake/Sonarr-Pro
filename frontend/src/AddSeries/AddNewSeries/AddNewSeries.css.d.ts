@@ -4,6 +4,9 @@ interface CssExports {
   'clearLookupButton': string;
   'helpText': string;
   'message': string;
+  'metadataSourceContainer': string;
+  'metadataSourceLabel': string;
+  'metadataSourceSelect': string;
   'noResults': string;
   'noSeriesText': string;
   'searchContainer': string;
