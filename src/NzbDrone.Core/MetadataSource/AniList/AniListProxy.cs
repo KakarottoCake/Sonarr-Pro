@@ -166,15 +166,15 @@ namespace NzbDrone.Core.MetadataSource.AniList
 
             series.LastAired = ToDateTime(media.EndDate);
 
-            if (media.AverageScore.HasValue)
+            // Always set, even for something nobody has rated. The interface reads
+            // Ratings.Value without checking, so leaving it null crashes the page listing
+            // the series rather than merely omitting a score.
+            series.Ratings = new Ratings
             {
                 // AniList scores out of 100; Sonarr's ratings are out of 10.
-                series.Ratings = new Ratings
-                {
-                    Value = media.AverageScore.Value / 10m,
-                    Votes = media.Popularity ?? 0
-                };
-            }
+                Value = media.AverageScore.HasValue ? media.AverageScore.Value / 10m : 0m,
+                Votes = media.Popularity ?? 0
+            };
 
             var poster = media.CoverImage?.ExtraLarge ?? media.CoverImage?.Large;
 

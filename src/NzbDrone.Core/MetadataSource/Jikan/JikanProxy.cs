@@ -218,10 +218,13 @@ namespace NzbDrone.Core.MetadataSource.Jikan
                 series.LastAired = anime.Aired.To.Value.ToUniversalTime();
             }
 
-            if (anime.Score.HasValue)
+            // Never null: the interface reads Ratings.Value without checking, so an unrated
+            // series would crash the page rather than simply showing no score.
+            series.Ratings = new Ratings
             {
-                series.Ratings = new Ratings { Value = anime.Score.Value, Votes = anime.ScoredBy ?? 0 };
-            }
+                Value = anime.Score ?? 0m,
+                Votes = anime.ScoredBy ?? 0
+            };
 
             if (anime.Rating.IsNotNullOrWhiteSpace())
             {
