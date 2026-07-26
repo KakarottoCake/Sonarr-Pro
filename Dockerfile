@@ -39,16 +39,21 @@ COPY . .
 # Map Docker's architecture names onto the .NET runtime identifiers, then build the
 # way the upstream CI does. SelfContained keeps the runtime with the app so the final
 # image needs no SDK.
+#
+# Platform is Posix for every Linux target. It names the OS family, not the CPU: the
+# solution only declares "Any CPU", "Posix" and "Windows", so passing an architecture
+# here fails with MSB4126 before anything compiles. The architecture is carried by
+# RuntimeIdentifiers instead.
 RUN set -eux; \
     case "${TARGETARCH}" in \
-      amd64) RID=linux-x64;   PLATFORM=x64   ;; \
-      arm64) RID=linux-arm64; PLATFORM=arm64 ;; \
+      amd64) RID=linux-x64   ;; \
+      arm64) RID=linux-arm64 ;; \
       *) echo "Unsupported architecture: ${TARGETARCH}" >&2; exit 1 ;; \
     esac; \
     dotnet msbuild -restore src/Sonarr.sln \
       -p:SelfContained=true \
       -p:Configuration=Release \
-      -p:Platform="${PLATFORM}" \
+      -p:Platform=Posix \
       -p:RuntimeIdentifiers="${RID}" \
       -t:PublishAllRids; \
     mkdir -p /app; \
@@ -57,8 +62,14 @@ RUN set -eux; \
 # The UI is built separately and is not produced by the .NET build.
 COPY --from=ui /src/_output/UI /app/UI
 
+# The publish output is platform-agnostic, so it carries assemblies this image can
+# never use. Upstream's packaging drops the same ones for its Linux builds: the
+# Windows platform assembly, and the Windows service installers. Sonarr.Update goes
+# too, because updating happens through Docker here.
 RUN set -eux; \
     rm -rf /app/Sonarr.Update; \
+    rm -f /app/Sonarr.Windows.*; \
+    rm -f /app/ServiceInstall.* /app/ServiceUninstall.*; \
     chmod +x /app/Sonarr; \
     find /app -name ffprobe -exec chmod +x {} \;
 
