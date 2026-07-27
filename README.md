@@ -4,6 +4,18 @@ A fork of [Sonarr](https://github.com/Sonarr/Sonarr) that adds the metadata and 
 
 > **Unofficial.** Sonarr Pro is not affiliated with, endorsed by, or supported by the Sonarr project. Please don't raise Sonarr Pro problems on Sonarr's issue tracker, forums, or Discord — they can't help with code they didn't write. Report them [here](https://github.com/KakarottoCake/Sonarr-Pro/issues) instead.
 
+## Built with AI, and not quiet about it
+
+This fork was written with **Claude Opus 5**. Not "AI-assisted" as a hedge — written with it, most of it, and I'd rather say so up front than have you find out from the commit trailers.
+
+I'm pro-AI and this account is pro-AI. Not AI *art* — artists get to keep that one. But AI as a tool for building things? Absolutely. (AI video gets a pass strictly when it's funny stupid shit.)
+
+**This is also why it isn't a pull request.** Sonarr's maintainers have their own position on AI-assisted contributions, and I'd guess they wouldn't want most of what's in here regardless of who or what wrote it. That's entirely their call — it's their project, their review time, and their support burden when something breaks at 3am. Forking is the polite option: nobody upstream has to review this, maintain it, or answer for it.
+
+None of which is a complaint about them. Sonarr is excellent, this is built entirely on their work, and the only reason a fork like this is even possible is that they made it GPL and wrote it well.
+
+**I'll do my best to merge upstream in at least once a month**, so this doesn't rot into an unmergeable mess. Where a bug turns out to be upstream's rather than mine, the plan is to report it there rather than patch around it here — that keeps the diff small and the merges cheap.
+
 ---
 
 ## Why this exists
