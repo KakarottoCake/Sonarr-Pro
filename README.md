@@ -38,6 +38,14 @@ Full detail, including the reasoning and the trade-offs behind each, is in [FORK
 
 Sonarr Pro doesn't contact Sonarr's servers for updates, crash reports, or announcements. Those endpoints describe upstream Sonarr builds, so an update offered there would replace this program with a different one — and the Sonarr team shouldn't receive crash reports or install metrics for a fork they don't maintain. Updates happen through Docker instead.
 
+## A word on Usenet
+
+NZBGet, SABnzbd and NZBVortex are all still in here, completely untouched. They'll work exactly as they do upstream.
+
+None of the new downloading features apply to them, though. Fake release filtering reads the file list inside a `.torrent` before the grab, and Usenet has no equivalent — so it's off there, and multi-season packs and pack trimming have only ever been tested against torrents. Consider Usenet support inherited rather than maintained.
+
+But nobody uses that shit anyways.
+
 ---
 
 ## Getting started
