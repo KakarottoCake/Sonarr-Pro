@@ -7,3 +7,16 @@
 .labelIcon {
   margin-left: 8px;
 }
+
+.namingFormatButton {
+  composes: button from 'Components/Link/Button.module.css';
+
+  align-self: flex-start;
+  margin-top: 8px;
+}
+
+.folderControls {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}

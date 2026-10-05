@@ -13,6 +13,7 @@ using NzbDrone.Common.Extensions;
 using NzbDrone.Core.CustomFormats;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.MediaFiles.MediaInfo;
+using NzbDrone.Core.MetadataSource;
 using NzbDrone.Core.Qualities;
 using NzbDrone.Core.Tv;
 
@@ -716,9 +717,35 @@ namespace NzbDrone.Core.Organizer
         private void AddIdTokens(Dictionary<string, Func<TokenMatch, string>> tokenHandlers, Series series)
         {
             tokenHandlers["{ImdbId}"] = m => series.ImdbId ?? string.Empty;
-            tokenHandlers["{TvdbId}"] = m => series.TvdbId.ToString();
+            tokenHandlers["{TvdbId}"] = m => series.TvdbId > 0 ? series.TvdbId.ToString() : string.Empty;
             tokenHandlers["{TvMazeId}"] = m => series.TvMazeId > 0 ? series.TvMazeId.ToString() : string.Empty;
             tokenHandlers["{TmdbId}"] = m => series.TmdbId > 0 ? series.TmdbId.ToString() : string.Empty;
+            tokenHandlers["{Plex Id}"] = m => GetPlexId(series);
+        }
+
+        private static string GetPlexId(Series series)
+        {
+            if (series.MetadataSource == MetadataSourceType.Tmdb && series.TmdbId > 0)
+            {
+                return $"{{tmdb-{series.TmdbId}}}";
+            }
+
+            if (series.TvdbId > 0)
+            {
+                return $"{{tvdb-{series.TvdbId}}}";
+            }
+
+            if (series.TmdbId > 0)
+            {
+                return $"{{tmdb-{series.TmdbId}}}";
+            }
+
+            if (Regex.IsMatch(series.ImdbId ?? string.Empty, @"^tt[0-9]+$"))
+            {
+                return $"{{imdb-{series.ImdbId}}}";
+            }
+
+            return string.Empty;
         }
 
         private string GetCustomFormatsToken(List<CustomFormat> customFormats, string filter)

@@ -14,6 +14,7 @@ import ModalContent from 'Components/Modal/ModalContent';
 import ModalFooter from 'Components/Modal/ModalFooter';
 import ModalHeader from 'Components/Modal/ModalHeader';
 import Popover from 'Components/Tooltip/Popover';
+import useApiQuery from 'Helpers/Hooks/useApiQuery';
 import { usePendingChangesStore } from 'Helpers/Hooks/usePendingChangesStore';
 import usePrevious from 'Helpers/Hooks/usePrevious';
 import {
@@ -69,7 +70,22 @@ function EditSeriesModalContent({
   );
   const [isConfirmMoveModalOpen, setIsConfirmMoveModalOpen] = useState(false);
 
-  const { saveSeries, isSaving, saveError } = useSaveSeries(isPathChanging);
+  const {
+    saveSeries,
+    isSaving: isSavingWithoutMove,
+    saveError: saveWithoutMoveError,
+  } = useSaveSeries(false);
+  const {
+    saveSeries: saveAndMoveSeries,
+    isSaving: isSavingWithMove,
+    saveError: saveWithMoveError,
+  } = useSaveSeries(true);
+  const [isMovingFiles, setIsMovingFiles] = useState(false);
+  const isSaving = isSavingWithoutMove || isSavingWithMove;
+  const saveError = isMovingFiles ? saveWithMoveError : saveWithoutMoveError;
+  const { data: namingFolder, isFetching: isFolderFetching } = useApiQuery<{
+    folder: string;
+  }>({ path: `/series/${seriesId}/folder` });
   const wasSaving = usePrevious(isSaving);
 
   const { settings, ...otherSettings } = useMemo(() => {
@@ -97,6 +113,31 @@ function EditSeriesModalContent({
     pendingChanges,
     saveError,
   ]);
+
+  const currentPath = settings.path.value;
+  const separatorIndex = Math.max(
+    currentPath.lastIndexOf('/'),
+    currentPath.lastIndexOf('\\')
+  );
+  const parentPath = currentPath.slice(0, separatorIndex + 1);
+  const folderName = currentPath.slice(separatorIndex + 1);
+  const isFolderNameInvalid =
+    !folderName.trim() || folderName === '.' || folderName === '..';
+
+  const handleFolderNameChange = useCallback(
+    ({ value }: InputChanged<string>) => {
+      if (!/[\\/]/.test(value)) {
+        setPendingChange('path', `${parentPath}${value}`);
+      }
+    },
+    [parentPath, setPendingChange]
+  );
+
+  const handleUseNamingFormat = useCallback(() => {
+    if (namingFolder?.folder && parentPath) {
+      setPendingChange('path', `${parentPath}${namingFolder.folder}`);
+    }
+  }, [namingFolder, parentPath, setPendingChange]);
 
   const handleInputChange = useCallback(
     ({ name, value }: InputChanged) => {
@@ -136,6 +177,8 @@ function EditSeriesModalContent({
     } else {
       setIsConfirmMoveModalOpen(false);
 
+      setIsMovingFiles(false);
+
       saveSeries({
         ...series,
         ...pendingChanges,
@@ -151,12 +194,13 @@ function EditSeriesModalContent({
 
   const handleMoveSeriesPress = useCallback(() => {
     setIsConfirmMoveModalOpen(false);
+    setIsMovingFiles(true);
 
-    saveSeries({
+    saveAndMoveSeries({
       ...series,
       ...pendingChanges,
     });
-  }, [series, pendingChanges, saveSeries]);
+  }, [series, pendingChanges, saveAndMoveSeries]);
 
   useEffect(() => {
     if (!isSaving && wasSaving && !saveError) {
@@ -238,6 +282,42 @@ function EditSeriesModalContent({
           </FormRow>
 
           <FormRow size={sizes.MEDIUM}>
+            <FormLabel>{translate('SeriesFolderName')}</FormLabel>
+
+            <FormInputHelpText text={translate('SeriesFolderRenameHelpText')} />
+            <div className={styles.folderControls}>
+              <FormInput
+                type={inputTypes.TEXT}
+                name="folderName"
+                aria-label={translate('SeriesFolderName')}
+                value={folderName}
+                onChange={handleFolderNameChange}
+              />
+              <Button
+                className={styles.namingFormatButton}
+                isDisabled={
+                  isFolderFetching || !namingFolder?.folder || !parentPath
+                }
+                onPress={handleUseNamingFormat}
+              >
+                {translate('UseNamingFormat')}
+              </Button>
+              <FormInputHelpText
+                text={namingFolder?.folder}
+                tooltip={translate('SeriesFolderNamingFormatHelpText')}
+              />
+              <FormInputHelpText
+                text={
+                  isFolderNameInvalid
+                    ? translate('SeriesFolderNameInvalid')
+                    : undefined
+                }
+                isError={true}
+              />
+            </div>
+          </FormRow>
+
+          <FormRow size={sizes.MEDIUM}>
             <FormLabel>{translate('Path')}</FormLabel>
 
             <FormInput
@@ -286,6 +366,7 @@ function EditSeriesModalContent({
         <SpinnerErrorButton
           error={saveError}
           isSpinning={isSaving}
+          isDisabled={isFolderNameInvalid}
           onPress={handleSavePress}
         >
           {translate('Save')}

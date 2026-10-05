@@ -232,6 +232,7 @@ const seriesTokens = [
 ];
 
 const seriesIdTokens = [
+  { token: '{Plex Id}', example: '{tvdb-12345}' },
   { token: '{ImdbId}', example: 'tt12345' },
   { token: '{TvdbId}', example: '12345' },
   { token: '{TmdbId}', example: '11223' },
@@ -508,6 +509,21 @@ function NamingModal(props: NamingModalProps) {
     anime,
     additional,
   });
+
+  if (name === 'seriesFolderFormat') {
+    tokenGroups.unshift({
+      legend: translate('Presets'),
+      caption: translate('NamingPresetsHelpText'),
+      tokens: [
+        {
+          token: '{Series TitleYear} {Plex Id}',
+          example: "The Series Title's! (2010) {tvdb-12345}",
+        },
+      ],
+      size: sizes.LARGE,
+      isFullFilename: true,
+    });
+  }
 
   return (
     <Modal isOpen={isOpen} onModalClose={onModalClose}>
