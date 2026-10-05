@@ -124,7 +124,7 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport.Manual
                     return new List<ManualImportItem>();
                 }
 
-                path = trackedDownload.ImportItem.OutputPath.FullPath;
+                path = (trackedDownload.ImportItem ?? trackedDownload.DownloadItem).OutputPath.FullPath;
             }
 
             if (!_diskProvider.FolderExists(path))

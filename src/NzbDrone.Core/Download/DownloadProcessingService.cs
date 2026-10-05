@@ -36,6 +36,7 @@ namespace NzbDrone.Core.Download
         {
             var trackedDownloads = _trackedDownloadService.GetTrackedDownloads()
                                                           .Where(t => t.DownloadItem.CanBeRemoved && t.State == TrackedDownloadState.Imported)
+                                                          .Where(t => Parser.Parser.ParseTitle(t.DownloadItem.Title) is not { IsMultiSeason: true })
                                                           .ToList();
 
             foreach (var trackedDownload in trackedDownloads)
