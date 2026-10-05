@@ -38,6 +38,13 @@ namespace NzbDrone.Core.Parser.Model
             return Episodes.Any(e => e.AirDateUtc >= DateTime.UtcNow.Date.AddDays(-14));
         }
 
+        public RemoteEpisode ForSeason(int seasonNumber)
+        {
+            var scoped = (RemoteEpisode)MemberwiseClone();
+            scoped.Episodes = Episodes.Where(episode => episode.SeasonNumber == seasonNumber).ToList();
+            return scoped;
+        }
+
         public override string ToString()
         {
             return Release.Title;

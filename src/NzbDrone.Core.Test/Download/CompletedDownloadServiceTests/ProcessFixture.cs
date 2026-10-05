@@ -76,6 +76,21 @@ namespace NzbDrone.Core.Test.Download.CompletedDownloadServiceTests
                 .Returns(new List<EpisodeHistory>());
         }
 
+        [Test]
+        public void multi_season_download_should_preserve_source_files_after_the_requested_season_is_imported()
+        {
+            _trackedDownload.DownloadItem.Title = "Drone.S01-S03";
+            _trackedDownload.DownloadItem.CanMoveFiles = true;
+            _trackedDownload.DownloadItem.CanBeRemoved = true;
+            _trackedDownload.State = TrackedDownloadState.Imported;
+
+            Subject.Check(_trackedDownload);
+
+            _trackedDownload.DownloadItem.CanMoveFiles.Should().BeFalse();
+            _trackedDownload.DownloadItem.CanBeRemoved.Should().BeFalse();
+            _trackedDownload.ImportItem.CanMoveFiles.Should().BeFalse();
+        }
+
         private void GivenSeriesMatch()
         {
             Mocker.GetMock<IParsingService>()

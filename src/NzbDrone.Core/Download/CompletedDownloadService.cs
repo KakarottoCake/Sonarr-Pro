@@ -72,6 +72,14 @@ namespace NzbDrone.Core.Download
 
             SetImportItem(trackedDownload);
 
+            if (Parser.Parser.ParseTitle(trackedDownload.DownloadItem.Title) is { IsMultiSeason: true })
+            {
+                trackedDownload.DownloadItem.CanMoveFiles = false;
+                trackedDownload.DownloadItem.CanBeRemoved = false;
+                trackedDownload.ImportItem.CanMoveFiles = false;
+                trackedDownload.ImportItem.CanBeRemoved = false;
+            }
+
             // Only process tracked downloads that are still downloading or have been blocked for importing due to an issue with matching
             if (trackedDownload.State != TrackedDownloadState.Downloading && trackedDownload.State != TrackedDownloadState.ImportBlocked)
             {

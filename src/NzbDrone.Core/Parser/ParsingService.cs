@@ -362,6 +362,11 @@ namespace NzbDrone.Core.Parser
                 // at a time and a multi-season pack has no single scene season.
                 if (parsedEpisodeInfo.IsMultiSeason && parsedEpisodeInfo.SeasonNumbers.Length > 1)
                 {
+                    if (searchCriteria is SeasonSearchCriteria seasonSearch && parsedEpisodeInfo.SeasonNumbers.Contains(seasonSearch.SeasonNumber))
+                    {
+                        return _episodeService.GetEpisodesBySeason(series.Id, seasonSearch.SeasonNumber);
+                    }
+
                     return parsedEpisodeInfo.SeasonNumbers
                         .SelectMany(s => _episodeService.GetEpisodesBySeason(series.Id, s))
                         .ToList();

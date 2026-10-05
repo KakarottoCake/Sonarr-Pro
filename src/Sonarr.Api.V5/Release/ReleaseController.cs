@@ -176,6 +176,16 @@ public class ReleaseController : RestController<ReleaseResource>
                 throw new NzbDroneClientException(HttpStatusCode.NotFound, "Unable to parse episodes in the release, will need to be manually provided");
             }
 
+            if (release.Override == null && remoteEpisode.ParsedEpisodeInfo.IsMultiSeason && release.SearchInfo?.SeasonNumber is int requestedSeason)
+            {
+                // Do not mutate the cached search result when grabbing one season from a complete pack.
+                remoteEpisode = remoteEpisode.ForSeason(requestedSeason);
+                if (remoteEpisode.Episodes.Empty())
+                {
+                    throw new NzbDroneClientException(HttpStatusCode.NotFound, "The multi-season release does not contain the requested season");
+                }
+            }
+
             await _downloadService.DownloadReport(remoteEpisode, release.Override?.DownloadClientId);
         }
         catch (ReleaseDownloadException ex)

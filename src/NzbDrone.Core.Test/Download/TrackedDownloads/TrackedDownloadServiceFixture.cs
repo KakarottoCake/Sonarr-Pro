@@ -21,6 +21,34 @@ namespace NzbDrone.Core.Test.Download.TrackedDownloads
     [TestFixture]
     public class TrackedDownloadServiceFixture : CoreTest<TrackedDownloadService>
     {
+        [Test]
+        public void multi_season_download_should_use_grabbed_episodes_even_when_its_title_maps_to_other_seasons()
+        {
+            var title = "TV.Series.S01-S03";
+            var series = new Series { Id = 5 };
+            var requested = new Episode { Id = 301, SeasonNumber = 3 };
+            var parsed = new ParsedEpisodeInfo { SeriesTitle = "TV Series", SeasonNumbers = new[] { 1, 2, 3 }, FullSeason = true };
+            Mocker.GetMock<IHistoryService>().Setup(service => service.FindByDownloadId("pack")).Returns(new List<EpisodeHistory>
+            {
+                new EpisodeHistory { EventType = EpisodeHistoryEventType.Grabbed, SeriesId = 5, EpisodeId = 301, SourceTitle = title }
+            });
+            Mocker.GetMock<IParsingService>().Setup(service => service.Map(It.IsAny<ParsedEpisodeInfo>(), 0, 0, null, null)).Returns(new RemoteEpisode
+            {
+                Series = series, ParsedEpisodeInfo = parsed, Episodes = new List<Episode> { new Episode { Id = 101, SeasonNumber = 1 }, requested }
+            });
+            Mocker.GetMock<IParsingService>().Setup(service => service.Map(It.IsAny<ParsedEpisodeInfo>(), 5, It.IsAny<IEnumerable<int>>())).Returns(new RemoteEpisode
+            {
+                Series = series, ParsedEpisodeInfo = parsed, Episodes = new List<Episode> { requested }
+            });
+            var client = new DownloadClientDefinition { Id = 1, Protocol = DownloadProtocol.Torrent };
+            var item = new DownloadClientItem { Title = title, DownloadId = "pack", DownloadClientInfo = new DownloadClientItemClientInfo { Id = 1 } };
+
+            var tracked = Subject.TrackDownload(client, item);
+
+            tracked.RemoteEpisode.Episodes.Should().ContainSingle().Which.Id.Should().Be(301);
+            Mocker.GetMock<IParsingService>().Verify(service => service.Map(It.IsAny<ParsedEpisodeInfo>(), 5, It.Is<IEnumerable<int>>(ids => ids.SequenceEqual(new[] { 301 }))), Times.Once());
+        }
+
         private void GivenDownloadHistory()
         {
             Mocker.GetMock<IHistoryService>()

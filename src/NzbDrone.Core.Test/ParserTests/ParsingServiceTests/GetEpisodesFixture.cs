@@ -499,6 +499,21 @@ namespace NzbDrone.Core.Test.ParserTests.ParsingServiceTests
         }
 
         [Test]
+        public void multi_season_pack_should_map_only_the_season_being_searched()
+        {
+            GivenFullSeason();
+            _series.UseSceneNumbering = false;
+            _parsedEpisodeInfo.SeasonNumbers = new[] { 1, 2, 3 };
+            Mocker.GetMock<IEpisodeService>().Setup(service => service.GetEpisodesBySeason(_series.Id, 3)).Returns(_episodes);
+
+            var result = Subject.GetEpisodes(_parsedEpisodeInfo, _series, true, new SeasonSearchCriteria { Series = _series, SeasonNumber = 3, Episodes = _episodes });
+
+            result.Should().BeEquivalentTo(_episodes);
+            Mocker.GetMock<IEpisodeService>().Verify(service => service.GetEpisodesBySeason(_series.Id, 1), Times.Never());
+            Mocker.GetMock<IEpisodeService>().Verify(service => service.GetEpisodesBySeason(_series.Id, 2), Times.Never());
+        }
+
+        [Test]
         public void should_fallback_to_lookup_full_season_by_season_number_if_series_uses_scene_numbering_and_no_epsiodes_are_found_by_scene_season_number()
         {
             GivenSceneNumberingSeries();

@@ -149,6 +149,7 @@ namespace NzbDrone.Core.Download.TrackedDownloads
                     trackedDownload.Added = grabbedEvent?.Date;
 
                     if (parsedEpisodeInfo == null ||
+                        (parsedEpisodeInfo.IsMultiSeason && grabbedEvent != null) ||
                         trackedDownload.RemoteEpisode?.Series == null ||
                         trackedDownload.RemoteEpisode.Episodes.Empty())
                     {
@@ -162,6 +163,7 @@ namespace NzbDrone.Core.Download.TrackedDownloads
                             trackedDownload.RemoteEpisode = _parsingService.Map(parsedEpisodeInfo,
                                 firstHistoryItem.SeriesId,
                                 historyItems.Where(v => v.EventType == EpisodeHistoryEventType.Grabbed)
+                                    .Where(h => h.SeriesId == firstHistoryItem.SeriesId)
                                     .Select(h => h.EpisodeId).Distinct());
                         }
                     }

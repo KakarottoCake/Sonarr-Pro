@@ -8,6 +8,7 @@ using NzbDrone.Common.EnvironmentInfo;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Download;
+using NzbDrone.Core.History;
 using NzbDrone.Core.MediaFiles.EpisodeImport;
 using NzbDrone.Core.Parser;
 using NzbDrone.Core.Parser.Model;
@@ -33,6 +34,7 @@ namespace NzbDrone.Core.MediaFiles
         private readonly IDetectSample _detectSample;
         private readonly IRuntimeInfo _runtimeInfo;
         private readonly IConfigService _configService;
+        private readonly IHistoryService _historyService;
         private readonly Logger _logger;
 
         public DownloadedEpisodesImportService(IDiskProvider diskProvider,
@@ -44,6 +46,7 @@ namespace NzbDrone.Core.MediaFiles
                                                IDetectSample detectSample,
                                                IRuntimeInfo runtimeInfo,
                                                IConfigService configService,
+                                               IHistoryService historyService,
                                                Logger logger)
         {
             _diskProvider = diskProvider;
@@ -55,6 +58,7 @@ namespace NzbDrone.Core.MediaFiles
             _detectSample = detectSample;
             _runtimeInfo = runtimeInfo;
             _configService = configService;
+            _historyService = historyService;
             _logger = logger;
         }
 
@@ -203,17 +207,44 @@ namespace NzbDrone.Core.MediaFiles
                 }
             }
 
+            HashSet<int> requestedEpisodeIds = null;
             if (downloadClientItemInfo is { IsMultiSeason: true })
             {
-                _logger.Debug("Download client item is marked as multi-season, not processing automatically to avoid importing incorrect files");
+                requestedEpisodeIds = (_historyService.FindByDownloadId(downloadClientItem.DownloadId) ?? new List<EpisodeHistory>())
+                    .Where(history => history.EventType == EpisodeHistoryEventType.Grabbed && history.SeriesId == series.Id)
+                    .Select(history => history.EpisodeId)
+                    .ToHashSet();
 
-                return new List<ImportResult>
+                if (requestedEpisodeIds.Count == 0)
                 {
-                    RejectionResult(ImportRejectionReason.MultiSeason, "Multi-season download, unable to import automatically")
-                };
+                    return new List<ImportResult>
+                    {
+                        RejectionResult(ImportRejectionReason.MultiSeason, "Multi-season download has no grabbed episodes to match; choose the season using interactive import")
+                    };
+                }
+
+                // A library file must belong to one season. Leave combined or ambiguous files in the download.
+                videoFiles = videoFiles.Where(file => Parser.Parser.ParsePath(file) is { SeasonNumbers.Length: 1 }).ToList();
             }
 
             var decisions = _importDecisionMaker.GetImportDecisions(videoFiles.ToList(), series, downloadClientItem, downloadClientItemInfo, folderInfo, true);
+            if (requestedEpisodeIds != null)
+            {
+                decisions = decisions.Where(decision => decision.LocalEpisode.Episodes.Any() &&
+                    decision.LocalEpisode.Episodes.All(episode => requestedEpisodeIds.Contains(episode.Id))).ToList();
+
+                // Unselected seasons remain available to the torrent client, including after seeding stops.
+                importMode = ImportMode.Copy;
+
+                if (decisions.Count == 0)
+                {
+                    return new List<ImportResult>
+                    {
+                        RejectionResult(ImportRejectionReason.MultiSeason, "No files in the multi-season download could be matched to the grabbed episodes; use interactive import")
+                    };
+                }
+            }
+
             var importResults = _importApprovedEpisodes.Import(decisions, true, downloadClientItem, importMode);
 
             if (importMode == ImportMode.Auto)
