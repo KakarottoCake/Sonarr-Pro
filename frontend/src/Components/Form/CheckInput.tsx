@@ -5,7 +5,7 @@ import { icons } from 'Helpers/Props';
 import { Kind } from 'Helpers/Props/kinds';
 import { CheckInputChanged } from 'typings/inputs';
 import FormInputHelpText from './FormInputHelpText';
-import styles from './CheckInput.css';
+import styles from './CheckInput.module.css';
 
 interface ChangeEvent<T = Element> extends SyntheticEvent<T, MouseEvent> {
   target: EventTarget & T;
@@ -66,6 +66,10 @@ function CheckInput(props: CheckInputProps) {
   const handleClick = useCallback(
     (event: SyntheticEvent<HTMLElement, MouseEvent>) => {
       if (isDisabled) {
+        return;
+      }
+
+      if (event.target === inputRef.current) {
         return;
       }
 

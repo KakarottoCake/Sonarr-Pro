@@ -1,3 +1,4 @@
+import { hashKey, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { create } from 'zustand';
 import ModelBase from 'App/ModelBase';
@@ -62,7 +63,7 @@ export interface ParsedInfo {
   releaseGroup: string;
   releaseHash: string;
   fullSeason: boolean;
-  seasonNumber: number;
+  seasonNumber: number | null;
   seriesTitle: string;
   episodeNumbers: number[];
   absoluteEpisodeNumbers?: number[];
@@ -375,7 +376,7 @@ const releaseStore = create<ReleaseStore>(() => ({
 const DEFAULT_RELEASES: Release[] = [];
 const THIRTY_MINUTES = 30 * 60 * 1000;
 
-const useReleases = (payload: InteractiveSearchPayload) => {
+const useReleases = (payload: InteractiveSearchPayload, filter = '') => {
   const customFilters = useCustomFiltersList('releases');
   const { episodeSelectedFilterKey, seasonSelectedFilterKey } =
     useReleaseOptions();
@@ -394,29 +395,36 @@ const useReleases = (payload: InteractiveSearchPayload) => {
       // Cache and stale times set to 30 minutes
       staleTime: THIRTY_MINUTES,
       gcTime: THIRTY_MINUTES,
-      refetchOnMount: 'always',
       // Disable refetch on window focus to prevent refetching when the user switch tabs
       refetchOnWindowFocus: false,
       retry: false,
     },
   });
 
-  const { data: filteredData, totalItems } = useMemo(
-    () =>
-      clientSideFilterAndSort<Release, typeof FILTER_PREDICATES>(
-        data ?? DEFAULT_RELEASES,
-        {
-          selectedFilterKey,
-          filters: FILTERS,
-          filterPredicates: FILTER_PREDICATES,
-          customFilters,
-          sortKey,
-          sortDirection,
-          sortPredicates: SORT_PREDICATES,
-        }
-      ),
-    [data, selectedFilterKey, customFilters, sortKey, sortDirection]
-  );
+  const { data: filteredData, totalItems } = useMemo(() => {
+    const { data: sortedData, totalItems } = clientSideFilterAndSort<
+      Release,
+      typeof FILTER_PREDICATES
+    >(data ?? DEFAULT_RELEASES, {
+      selectedFilterKey,
+      filters: FILTERS,
+      filterPredicates: FILTER_PREDICATES,
+      customFilters,
+      sortKey,
+      sortDirection,
+      sortPredicates: SORT_PREDICATES,
+    });
+
+    const trimmedFilter = filter.trim().toLowerCase();
+
+    const filteredData = trimmedFilter
+      ? sortedData.filter((item) =>
+          item.release.title.toLowerCase().includes(trimmedFilter)
+        )
+      : sortedData;
+
+    return { data: filteredData, totalItems };
+  }, [data, selectedFilterKey, customFilters, sortKey, sortDirection, filter]);
 
   useEffect(() => {
     if (!data) {
@@ -457,6 +465,24 @@ const useReleases = (payload: InteractiveSearchPayload) => {
 };
 
 export default useReleases;
+
+export const useClearReleasesOnUnmount = (
+  payload: InteractiveSearchPayload
+) => {
+  const queryClient = useQueryClient();
+  const queryKeyHash = hashKey(['/release', payload]);
+
+  useEffect(() => {
+    return () => {
+      const queryCache = queryClient.getQueryCache();
+      const query = queryCache.get(queryKeyHash);
+
+      if (query) {
+        queryCache.remove(query);
+      }
+    };
+  }, [queryKeyHash, queryClient]);
+};
 
 interface OverrideRelease {
   seriesId: number;

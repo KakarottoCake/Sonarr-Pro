@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using MonoTorrent;
 using NLog;
 
@@ -8,6 +10,7 @@ namespace NzbDrone.Core.MediaFiles.TorrentInfo
     {
         string GetHashFromTorrentFile(byte[] fileContents);
         TorrentContents GetContentsFromTorrentFile(byte[] fileContents);
+        List<string> GetFileNamesFromTorrentFile(byte[] fileContents);
     }
 
     public class TorrentFileInfoReader : ITorrentFileInfoReader
@@ -45,6 +48,19 @@ namespace NzbDrone.Core.MediaFiles.TorrentInfo
                 }
 
                 return contents;
+            }
+            catch
+            {
+                _logger.Trace("Invalid torrent file contents: {0}", Encoding.ASCII.GetString(fileContents));
+                throw;
+            }
+        }
+
+        public List<string> GetFileNamesFromTorrentFile(byte[] fileContents)
+        {
+            try
+            {
+                return Torrent.Load(fileContents).Files.Select(f => f.Path).ToList();
             }
             catch
             {

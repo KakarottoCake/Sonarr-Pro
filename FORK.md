@@ -8,7 +8,10 @@ Everything below is additive: an untouched install behaves exactly as upstream
 does, because every new behaviour is either off by default or defaults to the
 path that already existed.
 
-Forked from upstream `v5-develop` at `7e627f6`.
+Originally forked from upstream `v5-develop` at `7e627f6`.
+Synced through `da990630a` on 2026-10-04, including the Vite frontend and updated
+responsive UI. The upstream quality-rank migration is numbered 236 here to
+preserve the fork's existing migrations 233–235.
 
 ---
 

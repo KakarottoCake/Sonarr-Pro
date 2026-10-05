@@ -5,7 +5,7 @@ import InlineMarkdown from 'Components/Markdown/InlineMarkdown';
 import { kinds } from 'Helpers/Props';
 import translate from 'Utilities/String/translate';
 import { useMetadataSourceSettings } from './useMetadataSourceSettings';
-import styles from './Sources.css';
+import styles from './Sources.module.css';
 
 interface SourceProps {
   name: string;

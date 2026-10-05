@@ -45,8 +45,8 @@ only defined for a solution build. Building a bare `.csproj` drops the StyleCop
 configuration and then fails on every `using` directive in the repo. If you see
 hundreds of SA1200 errors, that is what happened — the code is fine.
 
-The frontend needs `yarn build --env production`. Without the flag webpack emits
-eval-source-map output and the UI loads as a blank page with no error.
+The frontend uses Vite and Node 24. Run `yarn typecheck` and `yarn build`.
+The old webpack `--env production` flag is no longer supported.
 
 Note that `TreatWarningsAsErrors` and `EnforceCodeStyleInBuild` are both on, so
 an unused `using` left behind after deleting code will fail the build.

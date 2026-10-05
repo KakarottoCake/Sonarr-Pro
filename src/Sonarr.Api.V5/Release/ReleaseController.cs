@@ -181,7 +181,7 @@ public class ReleaseController : RestController<ReleaseResource>
         catch (ReleaseDownloadException ex)
         {
             _logger.Error(ex, ex.Message);
-            throw new NzbDroneClientException(HttpStatusCode.Conflict, "Getting release from indexer failed");
+            throw new NzbDroneClientException(HttpStatusCode.Conflict, $"Getting release from indexer failed: {ex.Message}");
         }
 
         return TypedResults.Ok(release);
@@ -199,6 +199,11 @@ public class ReleaseController : RestController<ReleaseResource>
         if (seriesId.HasValue && seasonNumber.HasValue)
         {
             return TypedResults.Ok(await GetSeasonReleases(seriesId.Value, seasonNumber.Value));
+        }
+
+        if (seriesId.HasValue || seasonNumber.HasValue)
+        {
+            throw new NzbDroneClientException(HttpStatusCode.BadRequest, "seriesId and seasonNumber must be provided together");
         }
 
         return TypedResults.Ok(await GetRss());

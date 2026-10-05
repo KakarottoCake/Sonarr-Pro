@@ -17,10 +17,16 @@ public class GeneralSettingsResource : RestResource, ISslCertificateResource
     public bool LaunchBrowser { get; set; }
     public AuthenticationType AuthenticationMethod { get; set; }
     public AuthenticationRequiredType AuthenticationRequired { get; set; }
+    public string? AllowedHosts { get; set; }
     public bool AnalyticsEnabled { get; set; }
     public string? Username { get; set; }
     public string? Password { get; set; }
     public string? PasswordConfirmation { get; set; }
+    public string? OidcAuthority { get; set; }
+    public string? OidcClientId { get; set; }
+    public string? OidcClientSecret { get; set; }
+    public string? OidcUserIdentifier { get; set; }
+    public string? OidcScopes { get; set; }
     public string? LogLevel { get; set; }
     public int LogSizeLimit { get; set; }
     public string? ConsoleLogLevel { get; set; }
@@ -30,6 +36,7 @@ public class GeneralSettingsResource : RestResource, ISslCertificateResource
     public string? SslKeyPath { get; set; }
     public string? SslCertPassword { get; set; }
     public string? UrlBase { get; set; }
+    public string? TrustedNetworks { get; set; }
     public string? InstanceName { get; set; }
     public string? ApplicationUrl { get; set; }
     public bool UpdateAutomatically { get; set; }
@@ -62,7 +69,12 @@ public static class GeneralSettingsResourceMapper
             LaunchBrowser = model.LaunchBrowser,
             AuthenticationMethod = model.AuthenticationMethod,
             AuthenticationRequired = model.AuthenticationRequired,
+            AllowedHosts = model.AllowedHosts,
             AnalyticsEnabled = model.AnalyticsEnabled,
+            OidcAuthority = model.OidcAuthority,
+            OidcClientId = model.OidcClientId,
+            OidcUserIdentifier = model.OidcUserIdentifier,
+            OidcScopes = model.OidcScopes,
             LogLevel = model.LogLevel,
             LogSizeLimit = model.LogSizeLimit,
             ConsoleLogLevel = model.ConsoleLogLevel,
@@ -72,6 +84,7 @@ public static class GeneralSettingsResourceMapper
             SslKeyPath = model.SslKeyPath,
             SslCertPassword = model.SslCertPassword,
             UrlBase = model.UrlBase,
+            TrustedNetworks = model.TrustedNetworks,
             InstanceName = model.InstanceName,
             UpdateAutomatically = model.UpdateAutomatically,
             UpdateMechanism = model.UpdateMechanism,

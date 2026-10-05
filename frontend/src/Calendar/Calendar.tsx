@@ -17,7 +17,7 @@ import CalendarDays from './Day/CalendarDays';
 import DaysOfWeek from './Day/DaysOfWeek';
 import CalendarHeader from './Header/CalendarHeader';
 import useCalendar, { goToToday } from './useCalendar';
-import styles from './Calendar.css';
+import styles from './Calendar.module.css';
 
 const UPDATE_DELAY = 3600000; // 1 hour
 
@@ -90,14 +90,18 @@ function Calendar() {
       ) : null}
       {!error && !isLoading && view === 'agenda' ? (
         <div className={styles.calendarContent}>
-          <CalendarHeader />
+          <div className={styles.sticky}>
+            <CalendarHeader />
+          </div>
           <Agenda />
         </div>
       ) : null}
       {!error && !isLoading && view !== 'agenda' ? (
         <div className={styles.calendarContent}>
-          <CalendarHeader />
-          <DaysOfWeek />
+          <div className={styles.sticky}>
+            <CalendarHeader />
+            <DaysOfWeek />
+          </div>
           <CalendarDays />
         </div>
       ) : null}

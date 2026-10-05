@@ -67,10 +67,10 @@ You need [Docker](https://docs.docker.com/get-docker/). That's the only prerequi
 ### Quick start
 
 ```bash
-docker run -d --name sonarr-pro -p 8989:8989 -e PUID=1000 -e PGID=1000 -e TZ=Etc/UTC -v ./config:/config -v /path/to/media:/media --restart unless-stopped ghcr.io/kakarottocake/sonarr-pro:latest
+docker run -d --name sonarr-pro -p 6970:8989 -e PUID=1000 -e PGID=1000 -e TZ=Etc/UTC -v sonarr-pro-config:/config -v /path/to/media:/media --restart unless-stopped ghcr.io/kakarottocake/sonarr-pro:latest
 ```
 
-Then open **http://localhost:8989**.
+Then open **http://localhost:6970**. Upstream Sonarr can keep using port 8989.
 
 ### Or with Compose
 
@@ -80,17 +80,20 @@ Grab [`docker-compose.yml`](docker-compose.yml), edit the media path, and run:
 docker compose up -d
 ```
 
+Compose also defaults to port 6970; set `SONARR_PRO_PORT` to change it. Keep this
+Compose project and its `/config` directory separate from upstream Sonarr. To start
+with an empty library, copy only download client settings, root folders and remote
+path mappings, and give each instance its own download category.
+
 ### Updating
 
 ```bash
 docker compose pull && docker compose up -d
 ```
 
-Or without Compose:
-
-```bash
-docker pull ghcr.io/kakarottocake/sonarr-pro:latest && docker restart sonarr-pro
-```
+Without Compose, pull the new image and recreate the container using the same
+volume mounts and environment variables. Restarting an existing container keeps
+its old image, even after a pull.
 
 Your database and settings live in the `/config` volume and survive the upgrade. There's no in-app updater to wait on and nothing to reinstall.
 
@@ -100,6 +103,7 @@ Your database and settings live in the `/config` volume and survive the upgrade.
 |---|---|---|
 | `PUID` / `PGID` | `1000` | The user files are written as. Run `id` on the host and use those numbers, or downloads arrive owned by root and you won't be able to edit them. |
 | `TZ` | `Etc/UTC` | Timezone, so scheduled tasks and log timestamps match your clock. |
+| `UMASK` | `022` | File permission mask. The legacy `UMASK_SET` variable is also accepted. |
 
 Mount your download client's completed folder and your library under a **single** `/media` parent. If they're separate mounts, every import becomes a full file copy instead of an instant move.
 

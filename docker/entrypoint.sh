@@ -8,6 +8,7 @@ set -e
 
 PUID=${PUID:-1000}
 PGID=${PGID:-1000}
+umask "${UMASK:-${UMASK_SET:-022}}"
 
 if [ "$(id -u)" = "0" ]; then
     if ! getent group sonarr >/dev/null 2>&1; then

@@ -34,11 +34,11 @@ export const useLookupSeries = (
   const result = useApiQuery<AddSeries[]>({
     path: '/series/lookup',
     queryParams: {
-      term: query,
+      term: query.trim(),
       metadataSource,
     },
     queryOptions: {
-      enabled: isEnabled && !!query,
+      enabled: isEnabled && !!query.trim(),
       // Disable refetch on window focus to prevent refetching when the user switch tabs
       refetchOnWindowFocus: false,
     },

@@ -2,9 +2,10 @@ import React, { useCallback, useEffect } from 'react';
 import Alert from 'Components/Alert';
 import FieldSet from 'Components/FieldSet';
 import Form from 'Components/Form/Form';
-import FormGroup from 'Components/Form/FormGroup';
-import FormInputGroup from 'Components/Form/FormInputGroup';
+import FormInput from 'Components/Form/FormInput';
+import FormInputHelpText from 'Components/Form/FormInputHelpText';
 import FormLabel from 'Components/Form/FormLabel';
+import FormRow from 'Components/Form/FormRow';
 import LoadingIndicator from 'Components/Loading/LoadingIndicator';
 import { inputTypes, kinds } from 'Helpers/Props';
 import { InputChanged } from 'typings/inputs';
@@ -64,18 +65,20 @@ function Tmdb({ setChildSave, onChildStateChange }: TmdbProps) {
 
       {hasSettings && isFetched && !error ? (
         <Form>
-          <FormGroup>
+          <FormRow>
             <FormLabel>{translate('TmdbApiKey')}</FormLabel>
 
-            <FormInputGroup
+            <FormInputHelpText
+              text={translate('TmdbApiKeyHelpText')}
+              link="https://www.themoviedb.org/settings/api"
+            />
+            <FormInput
               type={inputTypes.PASSWORD}
               name="tmdbApiKey"
-              helpText={translate('TmdbApiKeyHelpText')}
-              helpLink="https://www.themoviedb.org/settings/api"
               onChange={handleInputChange}
               {...settings.tmdbApiKey}
             />
-          </FormGroup>
+          </FormRow>
         </Form>
       ) : null}
     </FieldSet>

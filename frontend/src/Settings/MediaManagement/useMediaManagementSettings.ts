@@ -9,6 +9,7 @@ export interface MediaManagementSettingsModel {
   createEmptySeriesFolders: boolean;
   deleteEmptyFolders: boolean;
   episodeTitleRequired: string;
+  skipFreeSpaceCheckWhenGrabbing: boolean;
   skipFreeSpaceCheckWhenImporting: boolean;
   skipUnmonitoredEpisodesFromPacks: boolean;
   minimumFreeSpaceWhenImporting: number;

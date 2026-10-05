@@ -9,7 +9,7 @@
 # ---------------------------------------------------------------------------
 # UI
 # ---------------------------------------------------------------------------
-FROM node:20-bookworm AS ui
+FROM node:24-bookworm AS ui
 
 WORKDIR /src
 
@@ -18,13 +18,11 @@ WORKDIR /src
 COPY package.json yarn.lock .yarnrc ./
 RUN yarn install --frozen-lockfile --network-timeout 600000
 
-# tsconfig.json lives at the root and is resolved from there by the TypeScript loader.
-COPY tsconfig.json ./
+COPY index.html vite.config.ts ./
 COPY frontend/ ./frontend/
 
-# --env production is what switches webpack out of eval-source-map. Without it the
-# bundle ships as tens of megabytes of dev output and the UI renders as a blank page.
-RUN yarn build --env production
+# Vite emits a production bundle by default. Check types before packaging it.
+RUN yarn typecheck && yarn build
 
 # ---------------------------------------------------------------------------
 # Backend

@@ -42,7 +42,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: yarn
 
       - run: yarn install --frozen-lockfile --network-timeout 600000
@@ -51,9 +51,9 @@ jobs:
 
       - run: yarn stylelint -f github
 
-      # --env production is the difference between a real bundle and multi-megabyte
-      # eval-source-map output that renders as a blank page.
-      - run: yarn build --env production
+      - run: yarn typecheck
+
+      - run: yarn build
 
   docker:
     name: Build image
