@@ -10,27 +10,47 @@ import React, {
 } from 'react';
 import { ListChildComponentProps, VariableSizeList } from 'react-window';
 import Alert from 'Components/Alert';
+import SelectInput from 'Components/Form/SelectInput';
 import TextInput from 'Components/Form/TextInput';
+import Icon from 'Components/Icon';
+import Button from 'Components/Link/Button';
 import LoadingIndicator from 'Components/Loading/LoadingIndicator';
 import FilterMenu from 'Components/Menu/FilterMenu';
 import PageMenuButton from 'Components/Menu/PageMenuButton';
 import { useCustomFiltersList } from 'Filters/useCustomFilters';
 import useMeasure from 'Helpers/Hooks/useMeasure';
-import { align, kinds } from 'Helpers/Props';
-import { SortDirection } from 'Helpers/Props/sortDirections';
+import { align, icons, kinds } from 'Helpers/Props';
 import { InputChanged } from 'typings/inputs';
 import getErrorMessage from 'Utilities/Object/getErrorMessage';
 import translate from 'Utilities/String/translate';
 import InteractiveSearchFilterModal from './InteractiveSearchFilterModal';
 import InteractiveSearchPayload from './InteractiveSearchPayload';
 import InteractiveSearchRow from './InteractiveSearchRow';
-import InteractiveSearchTableHeader from './InteractiveSearchTableHeader';
 import InteractiveSearchType from './InteractiveSearchType';
-import { setReleaseOption, useReleaseOptions } from './releaseOptionsStore';
+import { setReleaseOption } from './releaseOptionsStore';
 import useReleases, { FILTERS, Release, setReleaseSort } from './useReleases';
 import styles from './InteractiveSearch.module.css';
 
-const ESTIMATED_ROW_HEIGHT = 35;
+const ESTIMATED_ROW_HEIGHT = 250;
+
+const SORT_OPTIONS = [
+  {
+    key: 'releaseWeight',
+    value: () => translate('InteractiveSearchRecommended'),
+  },
+  { key: 'customFormatScore', value: () => translate('CustomFormatScore') },
+  { key: 'qualityWeight', value: () => translate('Quality') },
+  { key: 'size', value: () => translate('Size') },
+  { key: 'peers', value: () => translate('Peers') },
+  { key: 'age', value: () => translate('Age') },
+  { key: 'title', value: () => translate('Title') },
+  { key: 'indexer', value: () => translate('Indexer') },
+  { key: 'history', value: () => translate('History') },
+  { key: 'protocol', value: () => translate('Source') },
+  { key: 'languages', value: () => translate('Languages') },
+  { key: 'indexerFlags', value: () => translate('IndexerFlags') },
+  { key: 'rejections', value: () => translate('Rejections') },
+];
 
 interface RowItemData {
   items: Release[];
@@ -71,7 +91,6 @@ function InteractiveSearch({
   scrollerRef,
 }: InteractiveSearchProps) {
   const customFilters = useCustomFiltersList('releases');
-  const { columns } = useReleaseOptions();
 
   const [filter, setFilter] = useState('');
 
@@ -107,7 +126,15 @@ function InteractiveSearch({
 
   useLayoutEffect(() => {
     listRef.current?.resetAfterIndex(0);
-  }, [data]);
+  }, [data, bounds.width]);
+
+  useEffect(() => {
+    if (scrollerRef.current) {
+      scrollerRef.current.scrollTop = 0;
+    }
+
+    listRef.current?.scrollTo(0);
+  }, [filter, selectedFilterKey, sortKey, sortDirection, scrollerRef]);
 
   useEffect(() => {
     const scroller = scrollerRef.current;
@@ -175,43 +202,99 @@ function InteractiveSearch({
     [type]
   );
 
-  const handleSortPress = useCallback(
-    (sortKey: string, sortDirection?: SortDirection) => {
-      setReleaseSort(sortKey, sortDirection);
-    },
-    []
-  );
+  const handleSortChange = useCallback(({ value }: InputChanged<string>) => {
+    const direction = ['customFormatScore', 'qualityWeight', 'peers'].includes(
+      value
+    )
+      ? 'descending'
+      : 'ascending';
+    setReleaseSort(value, direction);
+  }, []);
+
+  const handleSortDirectionPress = useCallback(() => {
+    setReleaseSort(
+      sortKey,
+      sortDirection === 'ascending' ? 'descending' : 'ascending'
+    );
+  }, [sortKey, sortDirection]);
 
   const errorMessage = getErrorMessage(error);
 
   return (
-    <div>
-      <div className={styles.filterRow}>
-        <div className={styles.filterInput}>
-          <TextInput
-            name="releaseFilter"
-            value={filter}
-            placeholder={translate('FilterReleasesPlaceholder')}
-            onChange={onFilterChange}
+    <div className={styles.search}>
+      <div className={styles.toolbar}>
+        <div className={styles.filterRow}>
+          <label className={styles.filterInput}>
+            <span className={styles.srOnly}>
+              {translate('FilterReleasesPlaceholder')}
+            </span>
+            <TextInput
+              name="releaseFilter"
+              value={filter}
+              placeholder={translate('FilterReleasesPlaceholder')}
+              onChange={onFilterChange}
+            />
+          </label>
+
+          <FilterMenu
+            alignMenu={align.RIGHT}
+            selectedFilterKey={selectedFilterKey}
+            filters={FILTERS}
+            customFilters={customFilters}
+            buttonComponent={PageMenuButton}
+            filterModalConnectorComponent={InteractiveSearchFilterModal}
+            filterModalConnectorComponentProps={{ type, searchPayload }}
+            onFilterSelect={handleFilterSelect}
           />
         </div>
 
-        <FilterMenu
-          alignMenu={align.RIGHT}
-          selectedFilterKey={selectedFilterKey}
-          filters={FILTERS}
-          customFilters={customFilters}
-          buttonComponent={PageMenuButton}
-          filterModalConnectorComponent={InteractiveSearchFilterModal}
-          filterModalConnectorComponentProps={{ type, searchPayload }}
-          onFilterSelect={handleFilterSelect}
-        />
+        <div className={styles.sortRow}>
+          <span className={styles.resultCount} role="status" aria-live="polite">
+            {isFetching
+              ? translate('Searching')
+              : translate('InteractiveSearchResultsCount', {
+                  count: data.length,
+                  total: totalItems,
+                })}
+          </span>
+          <label className={styles.sortInput}>
+            <span>{translate('Sort')}</span>
+            <SelectInput<string>
+              name="releaseSort"
+              value={sortKey}
+              values={SORT_OPTIONS}
+              onChange={handleSortChange}
+            />
+          </label>
+          <Button
+            className={styles.directionButton}
+            title={translate(
+              sortDirection === 'ascending'
+                ? 'InteractiveSearchAscending'
+                : 'InteractiveSearchDescending'
+            )}
+            aria-label={translate(
+              sortDirection === 'ascending'
+                ? 'InteractiveSearchAscending'
+                : 'InteractiveSearchDescending'
+            )}
+            onPress={handleSortDirectionPress}
+          >
+            <Icon
+              name={
+                sortDirection === 'ascending'
+                  ? icons.SORT_ASCENDING
+                  : icons.SORT_DESCENDING
+              }
+            />
+          </Button>
+        </div>
       </div>
 
       {isFetching ? <LoadingIndicator /> : null}
 
       {!isFetching && error ? (
-        <div>
+        <Alert kind={kinds.DANGER}>
           {errorMessage ? (
             <>
               {translate('InteractiveSearchResultsSeriesFailedErrorMessage', {
@@ -222,7 +305,7 @@ function InteractiveSearch({
           ) : (
             translate('EpisodeSearchResultsLoadError')
           )}
-        </div>
+        </Alert>
       ) : null}
 
       {!isFetching && isFetched && !totalItems ? (
@@ -237,13 +320,6 @@ function InteractiveSearch({
 
       {!isFetching && !!data.length ? (
         <div ref={measureRef}>
-          <InteractiveSearchTableHeader
-            columns={columns}
-            sortKey={sortKey}
-            sortDirection={sortDirection}
-            onSortPress={handleSortPress}
-          />
-
           <VariableSizeList<RowItemData>
             ref={listRef}
             outerRef={listOuterRef}
@@ -254,7 +330,7 @@ function InteractiveSearch({
             itemSize={getRowHeight}
             estimatedItemSize={ESTIMATED_ROW_HEIGHT}
             itemData={itemData}
-            overscanCount={20}
+            overscanCount={6}
           >
             {Row}
           </VariableSizeList>

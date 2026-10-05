@@ -4,6 +4,7 @@ import { sizes } from 'Helpers/Props';
 import SeasonInteractiveSearchModalContent, {
   SeasonInteractiveSearchModalContentProps,
 } from './SeasonInteractiveSearchModalContent';
+import styles from './SeasonInteractiveSearchModalContent.module.css';
 
 interface SeasonInteractiveSearchModalProps
   extends SeasonInteractiveSearchModalContentProps {
@@ -17,6 +18,7 @@ function SeasonInteractiveSearchModal(
 
   return (
     <Modal
+      className={styles.modal}
       isOpen={isOpen}
       size={sizes.EXTRA_EXTRA_LARGE}
       closeOnBackgroundClick={false}

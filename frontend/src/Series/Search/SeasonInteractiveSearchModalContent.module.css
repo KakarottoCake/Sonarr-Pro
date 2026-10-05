@@ -1,5 +1,38 @@
+.modal {
+  composes: extraExtraLarge from 'Components/Modal/Modal.module.css';
+}
+
+.modalHeader {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.modalBody {
+  composes: innerModalBody from 'Components/Modal/ModalBody.module.css';
+}
+
 .modalFooter {
   composes: modalFooter from 'Components/Modal/ModalFooter.module.css';
 
   justify-content: space-between;
+}
+
+@media (--breakpointMedium) {
+  .modal {
+    max-width: 100%;
+    border-radius: 0;
+  }
+
+  .modalHeader {
+    padding-left: 16px;
+    font-size: 18px;
+  }
+
+  .modalBody {
+    padding: 12px 16px;
+  }
+
+  .modalFooter {
+    padding: 12px 16px;
+  }
 }

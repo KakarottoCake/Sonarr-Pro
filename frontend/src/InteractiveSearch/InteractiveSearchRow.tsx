@@ -7,17 +7,15 @@ import React, {
 } from 'react';
 import ProtocolLabel from 'Activity/Queue/ProtocolLabel';
 import Icon from 'Components/Icon';
+import Button from 'Components/Link/Button';
 import Link from 'Components/Link/Link';
-import SpinnerIconButton from 'Components/Link/SpinnerIconButton';
+import SpinnerButton from 'Components/Link/SpinnerButton';
 import ConfirmModal from 'Components/Modal/ConfirmModal';
-import VirtualTableRowCell from 'Components/Table/Cells/VirtualTableRowCell';
-import Popover from 'Components/Tooltip/Popover';
-import Tooltip from 'Components/Tooltip/Tooltip';
 import EpisodeFormats from 'Episode/EpisodeFormats';
 import EpisodeLanguages from 'Episode/EpisodeLanguages';
 import EpisodeQuality from 'Episode/EpisodeQuality';
 import IndexerFlags from 'Episode/IndexerFlags';
-import { icons, kinds, tooltipPositions } from 'Helpers/Props';
+import { icons, kinds } from 'Helpers/Props';
 import { useUiSettingsValues } from 'Settings/UI/useUiSettings';
 import formatDateTime from 'Utilities/Date/formatDateTime';
 import formatAge from 'Utilities/Number/formatAge';
@@ -31,22 +29,6 @@ import ReleaseSceneIndicator from './ReleaseSceneIndicator';
 import { Release, useGrabRelease } from './useReleases';
 import styles from './InteractiveSearchRow.module.css';
 
-function getDownloadIcon(
-  isGrabbing: boolean,
-  isGrabbed: boolean,
-  grabError?: string
-) {
-  if (isGrabbing) {
-    return icons.SPINNER;
-  } else if (isGrabbed) {
-    return icons.DOWNLOADING;
-  } else if (grabError) {
-    return icons.DOWNLOADING;
-  }
-
-  return icons.DOWNLOAD;
-}
-
 function getDownloadKind(isGrabbed: boolean, grabError?: string) {
   if (isGrabbed) {
     return kinds.SUCCESS;
@@ -56,7 +38,7 @@ function getDownloadKind(isGrabbed: boolean, grabError?: string) {
     return kinds.DANGER;
   }
 
-  return kinds.DEFAULT;
+  return kinds.PRIMARY;
 }
 
 function getDownloadTooltip(
@@ -203,181 +185,203 @@ function InteractiveSearchRow(props: InteractiveSearchRowProps) {
   }, [setIsOverrideModalOpen]);
 
   const { height: _height, ...positionStyle } = style;
+  let statusKey = 'InteractiveSearchReady';
+
+  if (rejections.length) {
+    statusKey = 'InteractiveSearchRejected';
+  } else if (!downloadAllowed) {
+    statusKey = 'InteractiveSearchNeedsMatch';
+  }
 
   return (
     <div ref={rowRef} className={styles.row} style={positionStyle}>
-      <VirtualTableRowCell className={styles.protocol}>
-        <ProtocolLabel protocol={protocol} />
-      </VirtualTableRowCell>
-
-      <VirtualTableRowCell className={styles.age}>
-        <span
-          title={formatDateTime(publishDate, longDateFormat, timeFormat, {
-            includeSeconds: true,
-          })}
-        >
-          {formatAge(age, ageHours, ageMinutes)}
-        </span>
-      </VirtualTableRowCell>
-
-      <VirtualTableRowCell className={styles.title}>
-        <div className={styles.titleContent}>
-          <Link to={infoUrl}>{title}</Link>
-          <ReleaseSceneIndicator
-            className={styles.sceneMapping}
-            seasonNumber={mappedSeasonNumber}
-            episodeNumbers={mappedEpisodeNumbers}
-            absoluteEpisodeNumbers={mappedAbsoluteEpisodeNumbers}
-            sceneSeasonNumber={seasonNumber}
-            sceneEpisodeNumbers={episodeNumbers}
-            sceneAbsoluteEpisodeNumbers={absoluteEpisodeNumbers}
-            sceneMapping={sceneMapping}
-            episodeRequested={episodeRequested}
-            isDaily={isDaily}
-          />
-        </div>
-      </VirtualTableRowCell>
-
-      <VirtualTableRowCell className={styles.indexer}>
-        {indexer}
-      </VirtualTableRowCell>
-
-      <VirtualTableRowCell className={styles.history}>
-        {history ? (
-          <Icon
-            name={icons.DOWNLOADING}
-            kind={history.failed ? kinds.DANGER : kinds.DEFAULT}
-            title={`${
-              history.failed
-                ? translate('FailedAt', {
-                    date: formatDateTime(
-                      history.failed,
-                      longDateFormat,
-                      timeFormat,
-                      { includeSeconds: true }
-                    ),
-                  })
-                : translate('GrabbedAt', {
-                    date: formatDateTime(
-                      history.grabbed,
-                      longDateFormat,
-                      timeFormat,
-                      { includeSeconds: true }
-                    ),
-                  })
-            }`}
-          />
-        ) : null}
-
-        {isBlocklisted ? (
-          <Icon
-            titleWrapperClassName={
-              history ? styles.blocklistIconContainer : undefined
-            }
-            name={icons.BLOCKLIST}
-            kind={kinds.DANGER}
-            title={
-              history?.failed
-                ? `${translate('BlocklistedAt', {
-                    date: formatDateTime(
-                      history.failed,
-                      longDateFormat,
-                      timeFormat,
-                      { includeSeconds: true }
-                    ),
-                  })}`
-                : translate('Blocklisted')
-            }
-          />
-        ) : null}
-      </VirtualTableRowCell>
-
-      <VirtualTableRowCell className={styles.size}>
-        {formatBytes(size)}
-      </VirtualTableRowCell>
-
-      <VirtualTableRowCell className={styles.peers}>
-        {protocol === 'torrent' ? (
-          <Peers seeders={seeders} leechers={leechers} />
-        ) : null}
-      </VirtualTableRowCell>
-
-      <VirtualTableRowCell className={styles.languages}>
-        <EpisodeLanguages languages={languages} />
-      </VirtualTableRowCell>
-
-      <VirtualTableRowCell className={styles.quality}>
-        <EpisodeQuality quality={quality} showRevision={true} />
-      </VirtualTableRowCell>
-
-      <VirtualTableRowCell className={styles.customFormatScore}>
-        <Tooltip
-          anchor={formatCustomFormatScore(
-            customFormatScore,
-            customFormats.length
-          )}
-          tooltip={<EpisodeFormats formats={customFormats} />}
-          position={tooltipPositions.LEFT}
-        />
-      </VirtualTableRowCell>
-
-      <VirtualTableRowCell className={styles.indexerFlags}>
-        {indexerFlags ? (
-          <Popover
-            anchor={<Icon name={icons.FLAG} />}
-            title={translate('IndexerFlags')}
-            body={<IndexerFlags indexerFlags={indexerFlags} />}
-            position={tooltipPositions.LEFT}
-          />
-        ) : null}
-      </VirtualTableRowCell>
-
-      <VirtualTableRowCell className={styles.rejected}>
-        {rejections.length ? (
-          <Popover
-            anchor={<Icon name={icons.DANGER} kind={kinds.DANGER} />}
-            title={translate('ReleaseRejected')}
-            body={
-              <ul>
-                {rejections.map((rejection, index) => {
-                  return <li key={index}>{rejection.message}</li>;
-                })}
-              </ul>
-            }
-            position={tooltipPositions.LEFT}
-          />
-        ) : null}
-      </VirtualTableRowCell>
-
-      <VirtualTableRowCell className={styles.download}>
-        <SpinnerIconButton
-          name={getDownloadIcon(isGrabbing, isGrabbed, grabError)}
-          kind={getDownloadKind(isGrabbed, grabError)}
-          title={getDownloadTooltip(isGrabbing, isGrabbed, grabError)}
-          isSpinning={isGrabbing}
-          onPress={handleGrabPress}
-        />
-
-        <Link
-          className={styles.manualDownloadContent}
-          title={translate('OverrideAndAddToDownloadQueue')}
-          onPress={onOverridePress}
-        >
-          <div className={styles.manualDownloadContent}>
-            <Icon
-              className={styles.interactiveIcon}
-              name={icons.INTERACTIVE}
-              size={12}
-            />
-
-            <Icon
-              className={styles.downloadIcon}
-              name={icons.CIRCLE_DOWN}
-              size={10}
+      <article className={styles.card} aria-label={title}>
+        <div className={styles.content}>
+          <div className={styles.heading}>
+            <Link className={styles.releaseTitle} to={infoUrl}>
+              {title}
+            </Link>
+            <ReleaseSceneIndicator
+              className={styles.sceneMapping}
+              seasonNumber={mappedSeasonNumber}
+              episodeNumbers={mappedEpisodeNumbers}
+              absoluteEpisodeNumbers={mappedAbsoluteEpisodeNumbers}
+              sceneSeasonNumber={seasonNumber}
+              sceneEpisodeNumbers={episodeNumbers}
+              sceneAbsoluteEpisodeNumbers={absoluteEpisodeNumbers}
+              sceneMapping={sceneMapping}
+              episodeRequested={episodeRequested}
+              isDaily={isDaily}
             />
           </div>
-        </Link>
-      </VirtualTableRowCell>
+
+          <div className={styles.badges}>
+            <ProtocolLabel protocol={protocol} />
+            <EpisodeQuality quality={quality} showRevision={true} />
+            <EpisodeLanguages languages={languages} />
+            <span
+              className={styles.score}
+              title={translate('CustomFormatScore')}
+            >
+              <Icon name={icons.SCORE} size={14} />
+              {translate('InteractiveSearchScore')}{' '}
+              {formatCustomFormatScore(customFormatScore, customFormats.length)}
+            </span>
+          </div>
+
+          <dl className={styles.metadata}>
+            <div>
+              <dt>{translate('Indexer')}</dt>
+              <dd>{indexer}</dd>
+            </div>
+            <div>
+              <dt>{translate('Size')}</dt>
+              <dd>{formatBytes(size)}</dd>
+            </div>
+            <div>
+              <dt>{translate('Age')}</dt>
+              <dd
+                title={formatDateTime(publishDate, longDateFormat, timeFormat, {
+                  includeSeconds: true,
+                })}
+              >
+                {formatAge(age, ageHours, ageMinutes)}
+              </dd>
+            </div>
+            {protocol === 'torrent' ? (
+              <div>
+                <dt>{translate('Peers')}</dt>
+                <dd>
+                  <Peers seeders={seeders} leechers={leechers} />
+                </dd>
+              </div>
+            ) : null}
+          </dl>
+
+          {history || isBlocklisted ? (
+            <div className={styles.history}>
+              {history ? (
+                <span>
+                  <Icon
+                    name={icons.DOWNLOADING}
+                    kind={history.failed ? kinds.DANGER : kinds.DEFAULT}
+                  />
+                  {history.failed
+                    ? translate('FailedAt', {
+                        date: formatDateTime(
+                          history.failed,
+                          longDateFormat,
+                          timeFormat,
+                          { includeSeconds: true }
+                        ),
+                      })
+                    : translate('GrabbedAt', {
+                        date: formatDateTime(
+                          history.grabbed,
+                          longDateFormat,
+                          timeFormat,
+                          { includeSeconds: true }
+                        ),
+                      })}
+                </span>
+              ) : null}
+              {isBlocklisted ? (
+                <span>
+                  <Icon name={icons.BLOCKLIST} kind={kinds.DANGER} />
+                  {translate('Blocklisted')}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+
+          {rejections.length ? (
+            <div className={styles.rejectionPreview}>
+              {rejections[0].message}
+            </div>
+          ) : null}
+
+          {rejections.length || customFormats.length || indexerFlags ? (
+            <details className={styles.details}>
+              <summary>{translate('Details')}</summary>
+              {rejections.length ? (
+                <div className={styles.detailSection}>
+                  <strong>
+                    {translate('Rejections')} ({rejections.length})
+                  </strong>
+                  <ul className={styles.rejectionList}>
+                    {rejections.map((rejection, rejectionIndex) => (
+                      <li key={rejectionIndex}>{rejection.message}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {customFormats.length ? (
+                <div className={styles.detailSection}>
+                  <strong>{translate('CustomFormats')}</strong>
+                  <div className={styles.formats}>
+                    <EpisodeFormats formats={customFormats} />
+                  </div>
+                </div>
+              ) : null}
+              {indexerFlags ? (
+                <div className={styles.detailSection}>
+                  <strong>{translate('IndexerFlags')}</strong>
+                  <IndexerFlags indexerFlags={indexerFlags} />
+                </div>
+              ) : null}
+            </details>
+          ) : null}
+
+          {grabError ? (
+            <div className={styles.grabError} role="alert">
+              {grabError}
+            </div>
+          ) : null}
+        </div>
+
+        <div className={styles.actions}>
+          <span
+            className={
+              rejections.length || !downloadAllowed
+                ? styles.rejected
+                : styles.approved
+            }
+          >
+            <Icon
+              name={
+                rejections.length || !downloadAllowed
+                  ? icons.DANGER
+                  : icons.CHECK_CIRCLE
+              }
+              size={14}
+            />
+            {translate(statusKey)}
+          </span>
+          <div className={styles.buttons}>
+            <SpinnerButton
+              className={styles.actionButton}
+              kind={getDownloadKind(isGrabbed, grabError)}
+              title={getDownloadTooltip(isGrabbing, isGrabbed, grabError)}
+              aria-label={`${translate('Download')}: ${title}`}
+              isSpinning={isGrabbing}
+              isDisabled={isGrabbed}
+              onPress={handleGrabPress}
+            >
+              <Icon name={isGrabbed ? icons.CHECK : icons.DOWNLOAD} size={16} />
+              {translate(isGrabbed ? 'Grabbed' : 'Download')}
+            </SpinnerButton>
+            <Button
+              className={styles.actionButton}
+              title={translate('OverrideAndAddToDownloadQueue')}
+              isDisabled={isGrabbing || isGrabbed}
+              onPress={onOverridePress}
+            >
+              <Icon name={icons.INTERACTIVE} size={16} />
+              {translate('InteractiveSearchChooseEpisodes')}
+            </Button>
+          </div>
+        </div>
+      </article>
 
       <ConfirmModal
         isOpen={isConfirmGrabModalOpen}
