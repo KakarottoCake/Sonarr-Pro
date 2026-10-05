@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using System.Numerics;
 using Newtonsoft.Json;
 
@@ -21,6 +23,8 @@ namespace NzbDrone.Core.Download.Clients.QBittorrent
         public string Label { get; set; } // Label of the torrent
         public string Category { get; set; } // Category of the torrent (3.3.5+)
 
+        public string Tags { get; set; }
+
         [JsonProperty(PropertyName = "save_path")]
         public string SavePath { get; set; } // Torrent save path
 
@@ -43,6 +47,11 @@ namespace NzbDrone.Core.Download.Clients.QBittorrent
 
         [JsonProperty(PropertyName = "last_activity")] // Timestamp in unix seconds when a chunk was last downloaded/uploaded
         public long LastActivity { get; set; }
+
+        public bool HasTag(string tag)
+        {
+            return (Tags ?? string.Empty).Split(',').Any(value => string.Equals(value.Trim(), tag, StringComparison.Ordinal));
+        }
     }
 
     public class QBittorrentTorrentProperties

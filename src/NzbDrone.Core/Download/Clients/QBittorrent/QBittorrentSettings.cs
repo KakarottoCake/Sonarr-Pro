@@ -1,3 +1,4 @@
+using System;
 using FluentValidation;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Annotations;
@@ -28,6 +29,8 @@ namespace NzbDrone.Core.Download.Clients.QBittorrent
     public class QBittorrentSettings : DownloadClientSettingsBase<QBittorrentSettings>
     {
         private static readonly QBittorrentSettingsValidator Validator = new();
+
+        internal string ReuseTag => $"sonarr-pro-reuse-{Uri.EscapeDataString(TvCategory ?? string.Empty)}";
 
         public QBittorrentSettings()
         {

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using NLog;
 using NzbDrone.Common.Cache;
@@ -97,14 +98,12 @@ namespace NzbDrone.Core.Download.Clients.QBittorrent
         public List<QBittorrentTorrent> GetTorrents(QBittorrentSettings settings)
         {
             var request = BuildRequest(settings).Resource("/api/v2/torrents/info");
-            if (settings.TvCategory.IsNotNullOrWhiteSpace())
-            {
-                request.AddQueryParam("category", settings.TvCategory);
-            }
-
             var response = ProcessRequest<List<QBittorrentTorrent>>(request, settings);
 
-            return response;
+            // Reused torrents keep their original category and save location.
+            return response.Where(torrent => settings.TvCategory.IsNullOrWhiteSpace() ||
+                                             torrent.Category == settings.TvCategory ||
+                                             torrent.HasTag(settings.ReuseTag)).ToList();
         }
 
         public bool IsTorrentLoaded(string hash, QBittorrentSettings settings)
