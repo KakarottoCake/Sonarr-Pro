@@ -10,7 +10,6 @@ import Label from 'Components/Label';
 import IconButton from 'Components/Link/IconButton';
 import Link from 'Components/Link/Link';
 import LoadingIndicator from 'Components/Loading/LoadingIndicator';
-import MetadataAttribution from 'Components/MetadataAttribution';
 import PageContent from 'Components/Page/PageContent';
 import PageContentBody from 'Components/Page/PageContentBody';
 import { OverflowDivider } from 'Components/Page/Toolbar/Overflow';
@@ -812,12 +811,10 @@ function SeriesDetails({ seriesId }: SeriesDetailsProps) {
                 </div>
 
                 <div className={styles.heroFooter}>
-                  <div className={styles.pathLine}>
+                  <div className={styles.pathLine} title={path}>
                     <Icon name={icons.FOLDER} size={14} />
                     <span>{path}</span>
                   </div>
-
-                  <MetadataAttribution />
                 </div>
               </div>
             </div>

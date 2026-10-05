@@ -243,42 +243,30 @@
 
 .heroFooter {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
   margin-top: 12px;
   color: color-mix(in oklch, var(--seriesOverlayInk) 70%, var(--seriesOverlayBackdrop));
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
-  gap: 12px;
 }
 
 .pathLine {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   flex: 1;
   min-width: 0;
-  max-width: 560px;
   font-size: 12px;
   gap: 7px;
 }
 
 .pathLine svg {
   flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .pathLine span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+  min-width: 0;
+  overflow-wrap: anywhere;
 
-.heroFooter a {
-  color: inherit;
-  font-size: 12px;
-
-  &:hover {
-    color: var(--white);
-    text-decoration: none;
-  }
+  line-height: 1.5;
 }
 
 .overviewSection {
