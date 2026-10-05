@@ -9,6 +9,7 @@
 
   /* Header */
   --headerHeight: 56px;
+  --mobileNavigationHeight: 64px;
 
   /* Sidebar */
   --sidebarWidth: 220px;

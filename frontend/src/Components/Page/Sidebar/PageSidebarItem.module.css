@@ -85,3 +85,16 @@
   align-items: center;
   margin-left: auto;
 }
+
+@media (--breakpointSmall) {
+  .link {
+    padding: 12px;
+    min-height: 48px;
+  }
+
+  .childLink {
+    margin-left: 36px;
+    min-height: 44px;
+    white-space: normal;
+  }
+}

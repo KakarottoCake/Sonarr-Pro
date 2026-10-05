@@ -91,6 +91,13 @@
 }
 
 @media (--breakpointSmall) {
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: var(--sidebarZIndex);
+    padding-right: 8px;
+  }
+
   .logoContainer {
     flex: 0 0 auto;
     padding-left: 16px;
@@ -101,7 +108,7 @@
   }
 
   .sidebarToggleContainer {
-    display: flex;
+    display: none;
   }
 
   .donate {

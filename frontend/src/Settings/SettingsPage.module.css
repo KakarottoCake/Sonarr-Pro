@@ -1,0 +1,24 @@
+.content {
+  composes: content from 'Components/Page/PageContent.module.css';
+}
+
+.toolbar {
+  composes: toolbar from 'Components/Page/Toolbar/PageToolbar.module.css';
+}
+
+@media (--breakpointSmall) {
+  .content {
+    padding-bottom: 72px;
+  }
+
+  .toolbar {
+    position: fixed;
+    right: 0;
+    bottom: calc(var(--mobileNavigationHeight) + env(safe-area-inset-bottom));
+    left: 0;
+    z-index: var(--pageJumpBarZIndex);
+    height: 72px;
+    border-top: 1px solid var(--borderColor);
+    border-bottom: none;
+  }
+}

@@ -147,6 +147,7 @@
 @media (--breakpointSmall) {
   .input {
     min-width: 0;
+    min-height: 44px;
     max-width: none;
     width: 100%;
   }
@@ -164,5 +165,10 @@
     left: 12px;
     min-width: 0;
     max-width: none;
+    max-height: calc(100dvh - var(--headerHeight) - var(--mobileNavigationHeight) - env(safe-area-inset-bottom) - 20px);
+  }
+
+  .dropdown .seriesContainer {
+    max-height: calc(100dvh - var(--headerHeight) - var(--mobileNavigationHeight) - env(safe-area-inset-bottom) - 34px);
   }
 }

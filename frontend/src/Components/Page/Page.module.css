@@ -13,6 +13,7 @@
 @media (--breakpointSmall) {
   .page {
     flex-grow: 1;
+    padding-bottom: calc(var(--mobileNavigationHeight) + env(safe-area-inset-bottom));
     height: initial;
   }
 }

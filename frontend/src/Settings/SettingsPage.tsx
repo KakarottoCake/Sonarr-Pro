@@ -4,6 +4,7 @@ import PageToolbar from 'Components/Page/Toolbar/PageToolbar';
 import PendingChangesModal from './PendingChangesModal';
 import SettingsSaveItems from './SettingsSaveItems';
 import useSettingsSave from './useSettingsSave';
+import styles from './SettingsPage.module.css';
 
 interface SettingsPageProps {
   title: string;
@@ -30,8 +31,8 @@ function SettingsPage({
   });
 
   return (
-    <PageContent title={title}>
-      <PageToolbar>
+    <PageContent className={styles.content} title={title}>
+      <PageToolbar className={styles.toolbar}>
         <SettingsSaveItems
           showSave={showSave}
           isSaving={isSaving}

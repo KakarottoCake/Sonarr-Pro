@@ -16,6 +16,9 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import { useAppDimension } from 'App/appStore';
+import BottomSheet from 'Components/Modal/BottomSheet';
+import translate from 'Utilities/String/translate';
 import MenuContext from './MenuContext';
 import styles from './Menu.module.css';
 
@@ -32,6 +35,7 @@ function Menu({
   alignMenu = 'left',
   enforceMaxHeight = true,
 }: MenuProps) {
+  const isSmallScreen = useAppDimension('isSmallScreen');
   const menuButtonId = useId();
   const [maxHeight, setMaxHeight] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -58,6 +62,8 @@ function Menu({
   const childrenArray = React.Children.toArray(children);
   const button = React.cloneElement(childrenArray[0] as ReactElement, {
     onPress: handleMenuButtonPress,
+    'aria-expanded': isMenuOpen,
+    'aria-haspopup': isSmallScreen ? 'dialog' : undefined,
   });
 
   const handleWindowResize = useCallback(() => {
@@ -112,6 +118,7 @@ function Menu({
 
   const click = useClick(context);
   const dismiss = useDismiss(context, {
+    enabled: !isSmallScreen,
     outsidePressEvent: 'click',
   });
 
@@ -130,14 +137,30 @@ function Menu({
     <>
       <div
         ref={refs.setReference}
-        {...getReferenceProps()}
+        {...(isSmallScreen ? {} : getReferenceProps())}
         id={menuButtonId}
         className={className}
       >
         {button}
       </div>
 
-      {isMenuOpen ? (
+      {isSmallScreen ? (
+        <BottomSheet
+          isOpen={isMenuOpen}
+          title={
+            button.props['aria-label'] ?? button.props.text ?? translate('Menu')
+          }
+          onModalClose={closeMenu}
+        >
+          <MenuContext.Provider value={menuContext}>
+            {React.cloneElement(childrenArray[1] as ReactElement, {
+              isOpen: isMenuOpen,
+            })}
+          </MenuContext.Provider>
+        </BottomSheet>
+      ) : null}
+
+      {!isSmallScreen && isMenuOpen ? (
         <FloatingPortal id="portal-root">
           <MenuContext.Provider value={menuContext}>
             {React.cloneElement(childrenArray[1] as ReactElement, {

@@ -154,6 +154,20 @@ function Modal({
     };
   }, [isOpen, handleKeyDown]);
 
+  useEffect(() => {
+    return () => {
+      removeFromOpenModals(modalId);
+
+      if (openModals.length === 0) {
+        if (isIOS()) {
+          setScrollLock(false);
+        } else {
+          elementClass(document.body).remove(styles.modalOpen);
+        }
+      }
+    };
+  }, [modalId]);
+
   if (!isOpen) {
     return null;
   }
@@ -162,7 +176,7 @@ function Modal({
 
   return ReactDOM.createPortal(
     <ModalContext.Provider value={{ headerId }}>
-      <FocusLock disabled={false}>
+      <FocusLock disabled={false} returnFocus={true}>
         <div className={styles.modalContainer}>
           <div
             ref={backgroundRef}

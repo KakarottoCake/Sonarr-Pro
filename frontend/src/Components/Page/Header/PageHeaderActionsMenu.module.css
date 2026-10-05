@@ -25,3 +25,10 @@
   width: 16px;
   color: var(--inkMuted);
 }
+
+@media (--breakpointSmall) {
+  .menuButton {
+    width: 44px;
+    height: 44px;
+  }
+}

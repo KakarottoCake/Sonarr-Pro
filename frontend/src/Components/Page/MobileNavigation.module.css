@@ -1,0 +1,53 @@
+.navigation {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: var(--sidebarZIndex);
+  display: flex;
+  padding: 4px env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  height: calc(var(--mobileNavigationHeight) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--borderColor);
+  background-color: var(--pageHeaderBackgroundColor);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 0;
+  flex-direction: column;
+  margin: 0 3px;
+  padding: 6px 2px;
+  min-width: 0;
+  min-height: 48px;
+  border-radius: 12px;
+  color: var(--inkSoft);
+  gap: 5px;
+
+  &:hover {
+    background-color: var(--menuItemHoverBackgroundColor);
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+}
+
+.active {
+  background-color: var(--sidebarActiveBackgroundColor);
+  color: var(--accent);
+}
+
+.label {
+  overflow: hidden;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+  font-size: 11px;
+}
