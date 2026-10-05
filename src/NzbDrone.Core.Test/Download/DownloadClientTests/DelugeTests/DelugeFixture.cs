@@ -363,6 +363,8 @@ namespace NzbDrone.Core.Test.Download.DownloadClientTests.DelugeTests
             Subject.GetItems();
             Mocker.GetMock<IDelugeProxy>()
                   .Verify(v => v.ReconnectToDaemon(It.IsAny<DelugeSettings>()), Times.Exactly(2));
+
+            ExceptionVerification.ExpectedWarns(1);
         }
     }
 }

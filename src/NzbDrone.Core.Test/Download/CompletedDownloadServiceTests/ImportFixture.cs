@@ -403,6 +403,8 @@ namespace NzbDrone.Core.Test.Download.CompletedDownloadServiceTests
 
             Mocker.GetMock<IEventAggregator>()
                   .Verify(v => v.PublishEvent(It.IsAny<ManualInteractionRequiredEvent>()), Times.Once());
+
+            ExceptionVerification.ExpectedWarns(1);
         }
 
         private void AssertNotImported()
@@ -411,6 +413,8 @@ namespace NzbDrone.Core.Test.Download.CompletedDownloadServiceTests
                   .Verify(v => v.PublishEvent(It.IsAny<DownloadCompletedEvent>()), Times.Never());
 
             _trackedDownload.State.Should().Be(TrackedDownloadState.ImportBlocked);
+
+            ExceptionVerification.ExpectedWarns(1);
         }
 
         private void AssertImported()
