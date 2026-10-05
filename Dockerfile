@@ -27,7 +27,7 @@ RUN yarn typecheck && yarn build
 # ---------------------------------------------------------------------------
 # Backend
 # ---------------------------------------------------------------------------
-FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS backend
+FROM mcr.microsoft.com/dotnet/sdk:10.0.401-noble AS backend
 
 ARG TARGETARCH
 WORKDIR /src
