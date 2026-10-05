@@ -17,13 +17,13 @@ public class quality_profile_quality_ranksFixture : MigrationTest<quality_profil
     {
         var db = WithMigrationTestDb();
 
-        db.Query<TableName>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'QualityProfileQualityRanks'")
+        db.Query<TableName>("SELECT name AS Name FROM sqlite_master WHERE type = 'table' AND name = 'QualityProfileQualityRanks'")
             .Should().ContainSingle();
 
-        db.Query<ColumnName>("PRAGMA table_info('Series')").Select(c => c.Name)
+        db.Query<ColumnName>("SELECT name AS Name FROM pragma_table_info('Series')").Select(c => c.Name)
             .Should().Contain(new[] { "MetadataSource", "ForeignId", "OrderingId", "AlternateTitles" });
 
-        db.Query<ColumnName>("PRAGMA table_info('Episodes')").Select(c => c.Name)
+        db.Query<ColumnName>("SELECT name AS Name FROM pragma_table_info('Episodes')").Select(c => c.Name)
             .Should().Contain("ForeignId");
     }
 
