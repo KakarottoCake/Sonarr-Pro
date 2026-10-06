@@ -7,6 +7,7 @@ export type ShowStatusMode = 'none' | 'deleted' | 'active' | 'all';
 export interface SeriesOptions {
   selectedFilterKey: string | number;
   pathFilter: string;
+  additionalFilterKeys: Array<string | number>;
   sortKey: string;
   sortDirection: 'ascending' | 'descending';
   view: string;
@@ -49,6 +50,7 @@ const { useOptions, useOption, setOptions, setOption, setSort, getOptions } =
     return {
       selectedFilterKey: 'all',
       pathFilter: '',
+      additionalFilterKeys: [],
       sortKey: 'sortTitle',
       sortDirection: 'ascending',
       secondarySortKey: 'sortTitle',

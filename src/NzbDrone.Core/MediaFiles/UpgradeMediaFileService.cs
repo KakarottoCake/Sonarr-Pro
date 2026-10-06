@@ -1,8 +1,10 @@
+using System;
 using System.IO;
 using System.Linq;
 using NLog;
 using NzbDrone.Common.Disk;
 using NzbDrone.Common.Extensions;
+using NzbDrone.Core.LibraryTools;
 using NzbDrone.Core.MediaFiles.EpisodeImport;
 using NzbDrone.Core.Parser.Model;
 
@@ -20,11 +22,15 @@ namespace NzbDrone.Core.MediaFiles
         private readonly IMoveEpisodeFiles _episodeFileMover;
         private readonly IDiskProvider _diskProvider;
         private readonly Logger _logger;
+        private readonly IProOptionsService _options;
+        private readonly IRetainedVersionService _versions;
 
         public UpgradeMediaFileService(IRecycleBinProvider recycleBinProvider,
                                        IMediaFileService mediaFileService,
                                        IMoveEpisodeFiles episodeFileMover,
                                        IDiskProvider diskProvider,
+                                       IProOptionsService options,
+                                       IRetainedVersionService versions,
                                        Logger logger)
         {
             _recycleBinProvider = recycleBinProvider;
@@ -32,6 +38,8 @@ namespace NzbDrone.Core.MediaFiles
             _episodeFileMover = episodeFileMover;
             _diskProvider = diskProvider;
             _logger = logger;
+            _options = options;
+            _versions = versions;
         }
 
         public EpisodeFileMoveResult UpgradeEpisodeFile(EpisodeFile episodeFile, LocalEpisode localEpisode, bool copyOnly = false)
@@ -45,6 +53,12 @@ namespace NzbDrone.Core.MediaFiles
                                             .ToList();
 
             var rootFolder = _diskProvider.GetParentFolder(localEpisode.Series.Path);
+
+            // Check the actual destination filesystem before removing any existing media.
+            if (copyOnly && _options.Read()?.HardlinkOnly == true)
+            {
+                _episodeFileMover.VerifyHardlink(episodeFile, localEpisode);
+            }
 
             // If there are existing episode files and the root folder is missing, throw, so the old file isn't left behind during the import process.
             if (existingFiles.Any() && !_diskProvider.FolderExists(rootFolder))
@@ -61,8 +75,21 @@ namespace NzbDrone.Core.MediaFiles
 
                 if (_diskProvider.FileExists(episodeFilePath))
                 {
+                    // Capture original file date before deletion for potential preservation
+                    try
+                    {
+                        localEpisode.PreservedFileDate = _diskProvider.FileGetLastWrite(episodeFilePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Debug(ex, "Failed to read file date for preservation: {0}", episodeFilePath);
+                        localEpisode.PreservedFileDate = null;
+                    }
+
                     _logger.Debug("Removing existing episode file: {0}", file);
-                    recycleBinPath = _recycleBinProvider.DeleteFile(episodeFilePath, subfolder);
+                    recycleBinPath = _options.ForSeries(localEpisode.Series.Id)?.KeepVersions == true
+                        ? _versions.Preserve(file, localEpisode.Series, file.Episodes.Value.Select(e => e.Id).ToList())
+                        : _recycleBinProvider.DeleteFile(episodeFilePath, subfolder);
                 }
                 else
                 {

@@ -107,6 +107,7 @@ namespace Sonarr.Api.V3.Indexers
 
                     remoteEpisode.Series = _seriesService.GetSeries(release.SeriesId!.Value);
                     remoteEpisode.Episodes = _episodeService.GetEpisodes(release.EpisodeIds);
+                    remoteEpisode.ManualEpisodeMapping = true;
                     remoteEpisode.ParsedEpisodeInfo.Quality = release.Quality;
                     remoteEpisode.Languages = release.Languages;
                 }
@@ -237,6 +238,15 @@ namespace Sonarr.Api.V3.Indexers
             var prioritizedDecisions = _prioritizeDownloadDecision.PrioritizeDecisions(decisions);
 
             return MapDecisions(prioritizedDecisions);
+        }
+
+        protected override List<ReleaseResource> MapDecisions(IEnumerable<DownloadDecision> decisions)
+        {
+            // Expired entries are only removed when the same key is looked up again (a grab),
+            // so without this every interactive search would stay in memory until a restart.
+            _remoteEpisodeCache.ClearExpired();
+
+            return base.MapDecisions(decisions);
         }
 
         protected override ReleaseResource MapDecision(DownloadDecision decision, int initialWeight)

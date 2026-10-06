@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import ErrorBoundary from 'Components/Error/ErrorBoundary';
+import AutomationBanner from 'LibraryTools/AutomationBanner';
 import PageContentError from './PageContentError';
 import styles from './PageContent.module.css';
 
@@ -27,6 +28,7 @@ function PageContent({
   return (
     <ErrorBoundary errorComponent={PageContentError}>
       <main className={className} aria-label={title}>
+        <AutomationBanner />
         {children}
       </main>
     </ErrorBoundary>

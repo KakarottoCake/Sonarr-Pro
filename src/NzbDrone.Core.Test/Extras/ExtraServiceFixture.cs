@@ -229,7 +229,7 @@ namespace NzbDrone.Core.Test.Extras
         }
 
         [Test]
-        public void should_not_search_subtitles_when_not_importing_from_job_folder()
+        public void should_search_nested_subtitles_without_importing_unrelated_nested_extras()
         {
             _localEpisode.FolderEpisodeInfo = null;
 
@@ -238,15 +238,18 @@ namespace NzbDrone.Core.Test.Extras
             var files = new List<string>
             {
                 _localEpisode.Path,
-                subtitleFile
+                subtitleFile,
+                Path.Combine(_episodeFolder, "Subs", "Series.Title.S01E01.en.srt"),
+                Path.Combine(_episodeFolder, "Extras", "unrelated.nfo")
             };
 
             WithExistingFiles(files);
 
             Subject.ImportEpisode(_localEpisode, _episodeFile, true);
 
-            Mocker.GetMock<IDiskProvider>().Verify(v => v.GetFiles(_episodeFolder, true), Times.Never);
-            Mocker.GetMock<IDiskProvider>().Verify(v => v.GetFiles(_episodeFolder, false), Times.Once);
+            Mocker.GetMock<IDiskProvider>().Verify(v => v.GetFiles(_episodeFolder, true), Times.Once);
+            Mocker.GetMock<IDiskProvider>().Verify(v => v.GetFiles(_episodeFolder, false), Times.Never);
+            _otherExtraService.Verify(v => v.CanImportFile(It.IsAny<LocalEpisode>(), It.IsAny<EpisodeFile>(), It.Is<string>(p => p.EndsWith("unrelated.nfo")), It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
         }
     }
 }

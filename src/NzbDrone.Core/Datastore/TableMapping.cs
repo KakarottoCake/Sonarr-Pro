@@ -25,6 +25,7 @@ using NzbDrone.Core.Indexers;
 using NzbDrone.Core.Instrumentation;
 using NzbDrone.Core.Jobs;
 using NzbDrone.Core.Languages;
+using NzbDrone.Core.LibraryTools;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.Messaging.Commands;
 using NzbDrone.Core.Notifications;
@@ -59,6 +60,7 @@ namespace NzbDrone.Core.Datastore
             RegisterMappers();
 
             Mapper.Entity<Config>("Config").RegisterModel();
+            Mapper.Entity<RetainedVersion>("RetainedVersions").RegisterModel();
 
             Mapper.Entity<RootFolder>("RootFolders").RegisterModel()
                   .Ignore(r => r.Accessible)

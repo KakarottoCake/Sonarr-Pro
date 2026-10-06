@@ -11,6 +11,7 @@ using NzbDrone.Common.Disk;
 using NzbDrone.Common.EnsureThat;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.CustomFormats;
+using NzbDrone.Core.LibraryTools;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.MediaFiles.MediaInfo;
 using NzbDrone.Core.MetadataSource;
@@ -45,6 +46,8 @@ namespace NzbDrone.Core.Organizer
         private readonly ICached<bool> _requiresAbsoluteEpisodeNumberCache;
         private readonly ICached<bool> _patternHasEpisodeIdentifierCache;
         private readonly Logger _logger;
+        private readonly IProOptionsService _proOptions;
+        private readonly IEpisodeService _episodes;
 
         private static readonly Regex TitleRegex = new Regex(@"(?<escaped>\{\{|\}\})|\{(?<prefix>[- ._\[(]*)(?<token>(?:[a-z0-9]+)(?:(?<separator>[- ._]+)(?:[a-z0-9]+))?)(?::(?<customFormat>[ ,a-z0-9+-]+(?<![- ])))?(?<suffix>[- ._)\]]*)\}",
                                                              RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
@@ -120,6 +123,8 @@ namespace NzbDrone.Core.Organizer
                                ICacheManager cacheManager,
                                IUpdateMediaInfo mediaInfoUpdater,
                                ICustomFormatCalculationService formatCalculator,
+                               IProOptionsService proOptions,
+                               IEpisodeService episodes,
                                Logger logger)
         {
             _namingConfigService = namingConfigService;
@@ -132,6 +137,8 @@ namespace NzbDrone.Core.Organizer
             _requiresAbsoluteEpisodeNumberCache = cacheManager.GetCache<bool>(GetType(), "requiresAbsoluteEpisodeNumber");
             _patternHasEpisodeIdentifierCache = cacheManager.GetCache<bool>(GetType(), "patternHasEpisodeIdentifier");
             _logger = logger;
+            _proOptions = proOptions;
+            _episodes = episodes;
         }
 
         private string BuildFileName(List<Episode> episodes, Series series, EpisodeFile episodeFile, string extension, int maxPath, NamingConfig namingConfig = null, List<CustomFormat> customFormats = null)
@@ -141,7 +148,8 @@ namespace NzbDrone.Core.Organizer
                 namingConfig = _namingConfigService.GetConfig();
             }
 
-            if (!namingConfig.RenameEpisodes)
+            if (!NamingContext.ManualRename && (_proOptions.ForSeries(series.Id)?.AutomaticRenaming == "manual" ||
+                (!namingConfig.RenameEpisodes && _proOptions.ForSeries(series.Id)?.AutomaticRenaming != "automatic")))
             {
                 return GetOriginalTitle(episodeFile, true) + extension;
             }
@@ -291,6 +299,14 @@ namespace NzbDrone.Core.Organizer
             AddSeasonTokens(tokenHandlers, seasonNumber);
 
             var format = seasonNumber == 0 ? namingConfig.SpecialsFolderFormat : namingConfig.SeasonFolderFormat;
+            var seasonTitle = _proOptions.ForSeries(series.Id)?.SeasonTitles?.GetValueOrDefault(seasonNumber);
+            tokenHandlers["{Season Title}"] = _ => !string.IsNullOrWhiteSpace(seasonTitle) ? seasonTitle : series.Seasons?.FirstOrDefault(s => s.SeasonNumber == seasonNumber)?.Title ?? string.Empty;
+            if (Regex.IsMatch(format, @"\{season[ ._-]*year", RegexOptions.IgnoreCase))
+            {
+                var firstAirDate = _episodes.GetEpisodesBySeason(series.Id, seasonNumber).Where(e => e.AirDateUtc.HasValue).OrderBy(e => e.AirDateUtc).FirstOrDefault()?.AirDateUtc;
+                tokenHandlers["{Season Year}"] = _ => firstAirDate?.Year.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+            }
+
             var folderName = ReplaceTokens(format, tokenHandlers, namingConfig);
 
             folderName = CleanFolderName(folderName);
@@ -402,7 +418,8 @@ namespace NzbDrone.Core.Organizer
             var namingConfig = _namingConfigService.GetConfig();
             var pattern = namingConfig.StandardEpisodeFormat;
 
-            if (!namingConfig.RenameEpisodes)
+            if (!NamingContext.ManualRename && (_proOptions.ForSeries(series.Id)?.AutomaticRenaming == "manual" ||
+                (!namingConfig.RenameEpisodes && _proOptions.ForSeries(series.Id)?.AutomaticRenaming != "automatic")))
             {
                 return false;
             }

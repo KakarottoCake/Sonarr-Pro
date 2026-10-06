@@ -7,6 +7,7 @@ namespace NzbDrone.Core.IndexerSearch.Definitions
     public class AnimeSeasonSearchCriteria : SearchCriteriaBase
     {
         public int SeasonNumber { get; set; }
+        public List<NzbDrone.Core.Tv.Episode> CatalogueEpisodes { get; set; }
         public List<string> SeasonSceneTitles { get; set; } = [];
 
         public List<string> AllSeasonSceneTitles => SeasonSceneTitles.Concat(CleanSeasonSceneTitles).Distinct(StringComparer.InvariantCultureIgnoreCase).ToList();

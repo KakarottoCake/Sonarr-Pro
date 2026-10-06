@@ -13,6 +13,9 @@ namespace NzbDrone.Core.Configuration
         void SaveConfigDictionary(Dictionary<string, object> configValues);
 
         bool IsDefined(string key);
+        string ProOptionsJson { get; set; }
+        string ProAccessKeysJson { get; set; }
+        string ProSearchHistoryJson { get; set; }
 
         // Download Client
         string DownloadClientWorkingFolders { get; set; }
@@ -22,6 +25,7 @@ namespace NzbDrone.Core.Configuration
         bool EnableCompletedDownloadHandling { get; set; }
         bool AutoRedownloadFailed { get; set; }
         bool AutoRedownloadFailedFromInteractiveSearch { get; set; }
+        int StalledTorrentTimeout { get; set; }
         bool EnableFakeReleaseProtection { get; set; }
         bool EnableMultiSeasonReleases { get; set; }
         bool SkipUnmonitoredEpisodesFromPacks { get; set; }

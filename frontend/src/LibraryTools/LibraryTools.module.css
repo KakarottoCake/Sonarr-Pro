@@ -1,0 +1,137 @@
+.tools {
+  display: grid;
+  gap: 24px;
+
+  padding: 20px;
+  max-width: 1100px;
+
+  section {
+    padding: 20px;
+    border: 1px solid var(--borderColor);
+    border-radius: 12px;
+  }
+
+  summary {
+    padding: 12px 0;
+    min-height: 44px;
+    cursor: pointer;
+  }
+
+  small {
+    display: block;
+    margin-top: 6px;
+    line-height: 1.5;
+    opacity: 0.85;
+  }
+
+  input,
+  select,
+  button {
+    padding: 10px;
+    min-height: 44px;
+    border: 1px solid var(--borderColor);
+    border-radius: 6px;
+    background: var(--pageBackground);
+    color: inherit;
+    font: inherit;
+  }
+}
+
+.automationBanner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--borderColor);
+  gap: 12px;
+
+  button,
+  a {
+    padding: 10px;
+    min-height: 44px;
+    color: inherit;
+  }
+
+  button {
+    border: 1px solid var(--borderColor);
+    border-radius: 6px;
+    background: var(--pageBackground);
+  }
+}
+
+.setting {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+
+  margin: 18px 0;
+
+  input {
+    flex: 0 0 22px;
+    margin: 0;
+  }
+}
+
+.storage {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid var(--borderColor);
+  border-radius: 8px;
+
+  summary {
+    padding: 10px 0;
+    min-height: 44px;
+    cursor: pointer;
+  }
+}
+
+.path {
+  overflow-wrap: anywhere;
+}
+
+.form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+
+  align-items: end;
+  gap: 12px;
+
+  label {
+    display: grid;
+    gap: 8px;
+  }
+}
+
+.token {
+  display: grid;
+  gap: 8px;
+
+  margin: 16px 0;
+}
+
+@media only screen and (max-width: 700px) {
+  .tools {
+    padding: 10px;
+
+    section {
+      padding: 14px;
+    }
+  }
+}
+
+.previewItems {
+  overflow-y: auto;
+  max-height: 480px;
+}
+
+.selectionFooter {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: 12px;
+  background: var(--pageBackground);
+  gap: 12px;
+}

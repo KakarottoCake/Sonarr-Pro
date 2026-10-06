@@ -126,6 +126,7 @@ public class ReleaseController : RestController<ReleaseResource>
 
                 remoteEpisode.Series = _seriesService.GetSeries(overrideInfo.SeriesId!.Value);
                 remoteEpisode.Episodes = _episodeService.GetEpisodes(overrideInfo.EpisodeIds);
+                remoteEpisode.ManualEpisodeMapping = true;
                 remoteEpisode.ParsedEpisodeInfo.Quality = overrideInfo.Quality;
                 remoteEpisode.Languages = overrideInfo.Languages;
             }
@@ -282,6 +283,10 @@ public class ReleaseController : RestController<ReleaseResource>
 
     private List<ReleaseResource> MapDecisions(IEnumerable<DownloadDecision> decisions, List<EpisodeHistory> history)
     {
+        // Expired entries are only removed when the same key is looked up again (a grab),
+        // so without this every interactive search would stay in memory until a restart.
+        _remoteEpisodeCache.ClearExpired();
+
         var result = new List<ReleaseResource>();
 
         foreach (var downloadDecision in decisions)

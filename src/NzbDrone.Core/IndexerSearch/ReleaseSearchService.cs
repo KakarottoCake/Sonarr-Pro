@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -11,6 +12,7 @@ using NzbDrone.Core.DecisionEngine;
 using NzbDrone.Core.Exceptions;
 using NzbDrone.Core.Indexers;
 using NzbDrone.Core.IndexerSearch.Definitions;
+using NzbDrone.Core.LibraryTools;
 using NzbDrone.Core.Parser;
 using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.Tv;
@@ -33,12 +35,16 @@ namespace NzbDrone.Core.IndexerSearch
         private readonly IEpisodeService _episodeService;
         private readonly IMakeDownloadDecision _makeDownloadDecision;
         private readonly Logger _logger;
+        private readonly ISearchActivityService _activity;
+        private readonly IProOptionsService _options;
 
         public ReleaseSearchService(IIndexerFactory indexerFactory,
                                 ISceneMappingService sceneMapping,
                                 ISeriesService seriesService,
                                 IEpisodeService episodeService,
                                 IMakeDownloadDecision makeDownloadDecision,
+                                ISearchActivityService activity,
+                                IProOptionsService options,
                                 Logger logger)
         {
             _indexerFactory = indexerFactory;
@@ -47,6 +53,8 @@ namespace NzbDrone.Core.IndexerSearch
             _episodeService = episodeService;
             _makeDownloadDecision = makeDownloadDecision;
             _logger = logger;
+            _activity = activity;
+            _options = options;
         }
 
         public async Task<List<DownloadDecision>> EpisodeSearch(int episodeId, bool userInvokedSearch, bool interactiveSearch)
@@ -435,6 +443,7 @@ namespace NzbDrone.Core.IndexerSearch
             {
                 var searchSpec = Get<AnimeSeasonSearchCriteria>(series, season, monitoredOnly, userInvokedSearch, interactiveSearch);
                 searchSpec.SeasonNumber = season.SeasonNumber;
+                searchSpec.CatalogueEpisodes = seasonEpisodes;
 
                 searchSpec.SceneTitles = seasonMappings
                     .Where(m => m.SeasonNumber == season.SeasonNumber)
@@ -452,7 +461,9 @@ namespace NzbDrone.Core.IndexerSearch
                 downloadDecisions.AddRange(decisions);
             }
 
-            foreach (var episode in episodesToSearch.Where(ep => !allEpisodesAiredOrAiringSoon))
+            var packFirst = _options.Read()?.PreferAnimeSeasonPacks == true;
+            var coveredEpisodeIds = downloadDecisions.Where(d => !d.Rejections.Any() && d.RemoteEpisode.ParsedEpisodeInfo.FullSeason).SelectMany(d => d.RemoteEpisode.Episodes.Select(e => e.Id)).ToHashSet();
+            foreach (var episode in episodesToSearch.Where(ep => packFirst ? !coveredEpisodeIds.Contains(ep.Id) : !allEpisodesAiredOrAiringSoon))
             {
                 downloadDecisions.AddRange(await SearchAnime(series, episode, monitoredOnly, userInvokedSearch, interactiveSearch, true));
             }
@@ -559,7 +570,8 @@ namespace NzbDrone.Core.IndexerSearch
 
             _logger.ProgressInfo("Searching indexers for {0}. {1} active indexers", criteriaBase, indexers.Count);
 
-            var tasks = indexers.Select(indexer => DispatchIndexer(searchAction, indexer, criteriaBase));
+            var failures = new ConcurrentBag<string>();
+            var tasks = indexers.Select(indexer => DispatchIndexer(searchAction, indexer, criteriaBase, failures));
 
             var batch = await Task.WhenAll(tasks);
 
@@ -577,10 +589,20 @@ namespace NzbDrone.Core.IndexerSearch
                 _episodeService.UpdateLastSearchTime(criteriaBase.Episodes);
             }
 
-            return _makeDownloadDecision.GetSearchDecision(reports, criteriaBase).ToList();
+            var decisions = _makeDownloadDecision.GetSearchDecision(reports, criteriaBase).ToList();
+            try
+            {
+                _activity.Record(criteriaBase, decisions, indexers.Count, failures.ToList());
+            }
+            catch (Exception ex)
+            {
+                _logger.Warn(ex, "Could not save search summary");
+            }
+
+            return decisions;
         }
 
-        private async Task<IList<ReleaseInfo>> DispatchIndexer(Func<IIndexer, Task<IList<ReleaseInfo>>> searchAction, IIndexer indexer, SearchCriteriaBase criteriaBase)
+        private async Task<IList<ReleaseInfo>> DispatchIndexer(Func<IIndexer, Task<IList<ReleaseInfo>>> searchAction, IIndexer indexer, SearchCriteriaBase criteriaBase, ConcurrentBag<string> failures)
         {
             try
             {
@@ -588,6 +610,7 @@ namespace NzbDrone.Core.IndexerSearch
             }
             catch (Exception ex)
             {
+                failures.Add($"{indexer.Definition.Name}: search failed ({ex.GetType().Name}). Test this indexer in Settings for details.");
                 _logger.Error(ex, "Error while searching for {0}", criteriaBase);
             }
 

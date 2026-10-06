@@ -7,6 +7,7 @@ using NzbDrone.Common.Disk;
 using NzbDrone.Common.EnsureThat;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Configuration;
+using NzbDrone.Core.LibraryTools;
 using NzbDrone.Core.MediaFiles.EpisodeImport;
 using NzbDrone.Core.MediaFiles.Events;
 using NzbDrone.Core.Messaging.Events;
@@ -22,6 +23,7 @@ namespace NzbDrone.Core.MediaFiles
         EpisodeFile MoveEpisodeFile(EpisodeFile episodeFile, Series series);
         EpisodeFile MoveEpisodeFile(EpisodeFile episodeFile, LocalEpisode localEpisode);
         EpisodeFile CopyEpisodeFile(EpisodeFile episodeFile, LocalEpisode localEpisode);
+        void VerifyHardlink(EpisodeFile episodeFile, LocalEpisode localEpisode);
     }
 
     public class EpisodeFileMovingService : IMoveEpisodeFiles
@@ -36,6 +38,7 @@ namespace NzbDrone.Core.MediaFiles
         private readonly IRootFolderService _rootFolderService;
         private readonly IEventAggregator _eventAggregator;
         private readonly IConfigService _configService;
+        private readonly IProOptionsService _proOptions;
         private readonly Logger _logger;
 
         public EpisodeFileMovingService(IEpisodeService episodeService,
@@ -48,6 +51,7 @@ namespace NzbDrone.Core.MediaFiles
                                 IRootFolderService rootFolderService,
                                 IEventAggregator eventAggregator,
                                 IConfigService configService,
+                                IProOptionsService proOptions,
                                 Logger logger)
         {
             _episodeService = episodeService;
@@ -60,6 +64,7 @@ namespace NzbDrone.Core.MediaFiles
             _rootFolderService = rootFolderService;
             _eventAggregator = eventAggregator;
             _configService = configService;
+            _proOptions = proOptions;
             _logger = logger;
         }
 
@@ -91,11 +96,30 @@ namespace NzbDrone.Core.MediaFiles
             return TransferFile(episodeFile, localEpisode.Series, localEpisode.Episodes, filePath, TransferMode.Move, localEpisode);
         }
 
+        public void VerifyHardlink(EpisodeFile episodeFile, LocalEpisode localEpisode)
+        {
+            var destination = _buildFileNames.BuildFilePath(localEpisode.Episodes, localEpisode.Series, episodeFile, Path.GetExtension(localEpisode.Path), null, localEpisode.CustomFormats);
+            EnsureEpisodeFolder(episodeFile, localEpisode, destination);
+            var probe = Path.Combine(Path.GetDirectoryName(destination), $".sonarr-hardlink-{Guid.NewGuid():N}");
+            if (!_diskProvider.TryCreateHardLink(episodeFile.Path ?? localEpisode.Path, probe))
+            {
+                throw new IOException("Hardlink-only import cannot link this download to the library. Existing files have been kept. Use a library folder on the download filesystem or disable hardlink-only imports.");
+            }
+
+            _diskProvider.DeleteFile(probe);
+        }
+
         public EpisodeFile CopyEpisodeFile(EpisodeFile episodeFile, LocalEpisode localEpisode)
         {
             var filePath = _buildFileNames.BuildFilePath(localEpisode.Episodes, localEpisode.Series, episodeFile, Path.GetExtension(localEpisode.Path), null, localEpisode.CustomFormats);
 
             EnsureEpisodeFolder(episodeFile, localEpisode, filePath);
+
+            if (_proOptions.Read()?.HardlinkOnly == true)
+            {
+                _logger.Info("Hardlink-only import: copying is disabled. Source and destination must support hardlinks on the same filesystem.");
+                return TransferFile(episodeFile, localEpisode.Series, localEpisode.Episodes, filePath, TransferMode.HardLink, localEpisode);
+            }
 
             if (_configService.CopyUsingHardlinks)
             {
@@ -151,7 +175,7 @@ namespace NzbDrone.Core.MediaFiles
                 _diskTransferService.TransferFile(episodeFilePath, destinationFilePath, mode);
             }
 
-            _updateEpisodeFileService.ChangeFileDateForFile(episodeFile, series, episodes);
+            _updateEpisodeFileService.ChangeFileDateForFile(episodeFile, series, episodes, localEpisode?.PreservedFileDate);
 
             try
             {

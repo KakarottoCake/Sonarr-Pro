@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using NLog;
 using NzbDrone.Common;
+using NzbDrone.Core.LibraryTools;
 using NzbDrone.Core.Lifecycle;
 using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.ProgressMessaging;
@@ -14,6 +15,7 @@ namespace NzbDrone.Core.Messaging.Commands
         private const int THREAD_LIMIT = 3;
 
         private readonly Logger _logger;
+        private readonly IProOptionsService _proOptions;
         private readonly IServiceFactory _serviceFactory;
         private readonly IManageCommandQueue _commandQueueManager;
         private readonly IEventAggregator _eventAggregator;
@@ -23,9 +25,11 @@ namespace NzbDrone.Core.Messaging.Commands
         public CommandExecutor(IServiceFactory serviceFactory,
                                IManageCommandQueue commandQueueManager,
                                IEventAggregator eventAggregator,
+                               IProOptionsService proOptions,
                                Logger logger)
         {
             _logger = logger;
+            _proOptions = proOptions;
             _serviceFactory = serviceFactory;
             _commandQueueManager = commandQueueManager;
             _eventAggregator = eventAggregator;
@@ -79,6 +83,13 @@ namespace NzbDrone.Core.Messaging.Commands
                 if (ProgressMessageContext.CommandModel == null)
                 {
                     ProgressMessageContext.CommandModel = commandModel;
+                }
+
+                if (_proOptions.Read()?.AutomationPaused == true && command.Trigger != CommandTrigger.Manual &&
+                    (command.Name.EndsWith("Search", StringComparison.Ordinal) || command.Name is "RssSync" or "ImportListSync"))
+                {
+                    _commandQueueManager.Complete(commandModel, "Automation paused; manual actions remain available.");
+                    return;
                 }
 
                 handler.Execute(command);

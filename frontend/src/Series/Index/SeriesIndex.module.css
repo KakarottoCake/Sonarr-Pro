@@ -9,6 +9,7 @@
   select {
     flex: 1;
     min-width: 0;
+    min-height: 44px;
   }
 
   span {
@@ -106,5 +107,30 @@
 
   .postersInnerContentBody {
     padding: calc(var(--pageContentBodyPaddingSmallScreen) - 5px);
+  }
+}
+
+.combinedFilters {
+  min-width: 180px;
+
+  summary {
+    padding: 12px;
+    cursor: pointer;
+  }
+
+  fieldset {
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    border: 1px solid var(--borderColor);
+    border-radius: 8px;
+  }
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    min-height: 44px;
   }
 }

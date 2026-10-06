@@ -321,6 +321,19 @@ function InteractiveSearchRow(props: InteractiveSearchRowProps) {
                   <div className={styles.formats}>
                     <EpisodeFormats formats={customFormats} />
                   </div>
+                  <ul>
+                    {props.formatScores?.map((format) => (
+                      <li key={format.id}>
+                        {format.name}: {format.score > 0 ? '+' : ''}
+                        {format.score.toLocaleString()}
+                      </li>
+                    ))}
+                  </ul>
+                  <small>
+                    Quality is ranked first. Format scores rank releases within
+                    the same quality tier; negative scores lower priority and
+                    your profile's minimum score can reject a release.
+                  </small>
                 </div>
               ) : null}
               {indexerFlags ? (

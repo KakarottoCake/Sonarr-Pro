@@ -10,6 +10,7 @@ namespace NzbDrone.Core.CustomFormats
         string Name { get; set; }
         bool Negate { get; set; }
         bool Required { get; set; }
+        int AlternativeGroup { get; set; }
 
         NzbDroneValidationResult Validate();
 

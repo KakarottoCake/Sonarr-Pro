@@ -55,6 +55,7 @@ export interface Release extends ModelBase {
   releaseWeight: number;
   customFormats: CustomFormat[];
   customFormatScore: number;
+  formatScores?: Array<{ id: number; name: string; score: number }>;
   sceneMapping?: AlternateTitle;
 }
 
@@ -321,11 +322,10 @@ const SORT_PREDICATES = {
   },
 
   languages: (item: Release, _direction: SortDirection) => {
-    if (item.languages.length > 1) {
-      return 10000;
-    }
-
-    return item.languages[0]?.id ?? 0;
+    return item.languages
+      .map((language) => language.name.toLowerCase())
+      .sort()
+      .join(', ');
   },
 
   peers: (item: Release, _direction: SortDirection) => {

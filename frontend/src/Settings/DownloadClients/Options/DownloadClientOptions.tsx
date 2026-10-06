@@ -128,6 +128,19 @@ function DownloadClientOptions({
                 />
               </FormRow>
             ) : null}
+            <FormRow>
+              <FormLabel>{translate('StalledTorrentTimeout')}</FormLabel>
+              <FormInputHelpText
+                text={translate('StalledTorrentTimeoutHelpText')}
+              />
+              <FormInput
+                type={inputTypes.NUMBER}
+                name="stalledTorrentTimeout"
+                min={0}
+                onChange={handleInputChange}
+                {...settings.stalledTorrentTimeout}
+              />
+            </FormRow>
           </Form>
         </FieldSet>
       ) : null}

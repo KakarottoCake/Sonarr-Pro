@@ -29,6 +29,8 @@ namespace NzbDrone.Core.MediaFiles
         public LazyLoaded<Series> Series { get; set; }
         public List<Language> Languages { get; set; }
         public ReleaseType ReleaseType { get; set; }
+        public long? SourceReleaseSize { get; set; }
+        public string SourceReleaseTitle { get; set; }
 
         public override string ToString()
         {

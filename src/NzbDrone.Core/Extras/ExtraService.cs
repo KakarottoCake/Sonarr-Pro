@@ -7,6 +7,7 @@ using NzbDrone.Common.Disk;
 using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Download;
 using NzbDrone.Core.Extras.Files;
+using NzbDrone.Core.Extras.Subtitles;
 using NzbDrone.Core.MediaCover;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.MediaFiles.Events;
@@ -65,7 +66,9 @@ namespace NzbDrone.Core.Extras
                 return;
             }
 
-            var folderSearchOption = localEpisode.FolderEpisodeInfo != null;
+            // Subtitle matching uses explicit filename/episode evidence or a
+            // video-specific subfolder, so it can safely inspect nested subtitle folders.
+            const bool folderSearchOption = true;
 
             var wantedExtensions = _configService.ExtraFileExtensions.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                                                                      .Select(e => e.Trim(' ', '.')
@@ -79,6 +82,16 @@ namespace NzbDrone.Core.Extras
             foreach (var file in files)
             {
                 var extension = Path.GetExtension(file);
+
+                // Inspect new nested locations only for subtitles. Other extras keep
+                // their existing single-episode versus season-folder search scope.
+                if (localEpisode.FolderEpisodeInfo == null &&
+                    !string.Equals(Path.GetDirectoryName(file), sourceFolder, StringComparison.OrdinalIgnoreCase) &&
+                    !SubtitleFileExtensions.Extensions.Contains(extension.ToLowerInvariant()))
+                {
+                    continue;
+                }
+
                 var matchingExtension = wantedExtensions.FirstOrDefault(e => e.Equals(extension));
 
                 if (matchingExtension == null)

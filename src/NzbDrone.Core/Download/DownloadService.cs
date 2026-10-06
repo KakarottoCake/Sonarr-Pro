@@ -12,6 +12,7 @@ using NzbDrone.Core.Download.Clients;
 using NzbDrone.Core.Download.Pending;
 using NzbDrone.Core.Exceptions;
 using NzbDrone.Core.Indexers;
+using NzbDrone.Core.LibraryTools;
 using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.Parser.Model;
 
@@ -32,6 +33,7 @@ namespace NzbDrone.Core.Download
         private readonly IEventAggregator _eventAggregator;
         private readonly ISeedConfigProvider _seedConfigProvider;
         private readonly Logger _logger;
+        private readonly IProOptionsService _proOptions;
 
         public DownloadService(IProvideDownloadClient downloadClientProvider,
                                IDownloadClientStatusService downloadClientStatusService,
@@ -40,6 +42,7 @@ namespace NzbDrone.Core.Download
                                IRateLimitService rateLimitService,
                                IEventAggregator eventAggregator,
                                ISeedConfigProvider seedConfigProvider,
+                               IProOptionsService proOptions,
                                Logger logger)
         {
             _downloadClientProvider = downloadClientProvider;
@@ -50,10 +53,16 @@ namespace NzbDrone.Core.Download
             _eventAggregator = eventAggregator;
             _seedConfigProvider = seedConfigProvider;
             _logger = logger;
+            _proOptions = proOptions;
         }
 
         public async Task DownloadReport(RemoteEpisode remoteEpisode, int? downloadClientId)
         {
+            if (_proOptions.Read()?.AutomationPaused == true && remoteEpisode.ReleaseSource is not (ReleaseSourceType.InteractiveSearch or ReleaseSourceType.UserInvokedSearch))
+            {
+                throw new ReleaseDownloadException(remoteEpisode.Release, "Automatic downloads are paused in Library tools.");
+            }
+
             var filterBlockedClients = remoteEpisode.Release.PendingReleaseReason == PendingReleaseReason.DownloadClientUnavailable;
 
             var tags = remoteEpisode.Series?.Tags;

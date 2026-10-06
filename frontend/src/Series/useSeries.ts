@@ -33,6 +33,11 @@ const dateFilterPredicate = (
 
 export const FILTERS: Filter[] = [
   {
+    key: 'anime',
+    label: () => translate('Anime'),
+    filters: [{ key: 'seriesType', value: 'anime', type: 'equal' }],
+  },
+  {
     key: 'all',
     label: () => translate('All'),
     filters: [],
@@ -625,8 +630,13 @@ const useSeries = () => {
 export default useSeries;
 
 export const useSeriesIndex = () => {
-  const { selectedFilterKey, sortKey, sortDirection, pathFilter } =
-    useSeriesOptions();
+  const {
+    selectedFilterKey,
+    additionalFilterKeys,
+    sortKey,
+    sortDirection,
+    pathFilter,
+  } = useSeriesOptions();
   const { data: seriesData = [], ...queryResult } = useSeries();
   const customFilters = useCustomFiltersList('series');
 
@@ -650,6 +660,10 @@ export const useSeriesIndex = () => {
       }),
       {
         selectedFilterKey,
+        selectedFilterKeys: [
+          selectedFilterKey,
+          ...(additionalFilterKeys ?? []),
+        ],
         filters: FILTERS,
         filterPredicates: FILTER_PREDICATES,
         customFilters,
@@ -664,6 +678,7 @@ export const useSeriesIndex = () => {
     customFilters,
     seriesData,
     selectedFilterKey,
+    additionalFilterKeys,
     sortKey,
     sortDirection,
     pathFilter,

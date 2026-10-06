@@ -109,6 +109,12 @@ const fileDateOptions: EnhancedSelectInputValue<string>[] = [
       return translate('UtcAirDate');
     },
   },
+  {
+    key: 'preserveOriginal',
+    get value() {
+      return translate('PreserveOriginal');
+    },
+  },
 ];
 
 const seasonPackUpgradeOptions: EnhancedSelectInputValue<string>[] = [

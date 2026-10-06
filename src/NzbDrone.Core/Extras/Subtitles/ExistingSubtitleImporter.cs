@@ -81,6 +81,7 @@ namespace NzbDrone.Core.Extras.Subtitles
                                            EpisodeFileId = firstEpisode.EpisodeFileId,
                                            RelativePath = series.Path.GetRelativePath(possibleSubtitleFile),
                                            Language = localEpisode.SubtitleInfo?.Language ?? Language.Unknown,
+                                           LanguageCode = localEpisode.SubtitleInfo?.LanguageCode,
                                            LanguageTags = localEpisode.SubtitleInfo?.LanguageTags ?? new List<string>(),
                                            Title = localEpisode.SubtitleInfo?.Title,
                                            Extension = extension,

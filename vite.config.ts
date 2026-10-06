@@ -75,12 +75,10 @@ function cssModuleTypes(): Plugin {
     apply: 'serve',
 
     configureServer(server) {
-      const bin = process.platform === 'win32' ? 'tcm.cmd' : 'tcm';
-
       child = spawn(
-        path.join(import.meta.dirname, 'node_modules', '.bin', bin),
-        ['frontend/src', '--camelCase', '--pattern', '**/*.module.css', '--watch'],
-        { cwd: import.meta.dirname, stdio: 'inherit', shell: process.platform === 'win32' }
+        process.execPath,
+        [path.join(import.meta.dirname, 'node_modules', 'typed-css-modules', 'lib', 'cli.js'), 'frontend/src', '--camelCase', '--pattern', '**/*.module.css', '--watch'],
+        { cwd: import.meta.dirname, stdio: 'inherit', shell: false }
       );
 
       server.httpServer?.on('close', stop);
@@ -108,6 +106,9 @@ export default defineConfig({
   server: {
     port: Number(process.env.SONARR_VITE_PORT ?? 8959),
     strictPort: true,
+    watch: {
+      ignored: ['**/_tests/**', '**/_output/**', '**/obj/**', '**/bin/**'],
+    },
     hmr: {
       clientPort: Number(process.env.SONARR_VITE_PORT ?? 8959),
     },

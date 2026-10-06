@@ -103,6 +103,24 @@ namespace NzbDrone.Core.Configuration
             set { SetValue("RecycleBin", value); }
         }
 
+        public string ProOptionsJson
+        {
+            get { return GetValue("ProOptions", "{}"); }
+            set { SetValue("ProOptions", value); }
+        }
+
+        public string ProSearchHistoryJson
+        {
+            get => GetValue("ProSearchHistory", "[]");
+            set => SetValue("ProSearchHistory", value);
+        }
+
+        public string ProAccessKeysJson
+        {
+            get { return GetValue("ProAccessKeys", "[]"); }
+            set { SetValue("ProAccessKeys", value); }
+        }
+
         public int RecycleBinCleanupDays
         {
             get { return GetValueInt("RecycleBinCleanupDays", 7); }
@@ -192,6 +210,13 @@ namespace NzbDrone.Core.Configuration
             get { return GetValueBoolean("CreateEmptySeriesFolders", false); }
 
             set { SetValue("CreateEmptySeriesFolders", value); }
+        }
+
+        public int StalledTorrentTimeout
+        {
+            get { return GetValueInt("StalledTorrentTimeout", 0); }
+
+            set { SetValue("StalledTorrentTimeout", Math.Clamp(value, 0, 43200)); }
         }
 
         public bool DeleteEmptyFolders

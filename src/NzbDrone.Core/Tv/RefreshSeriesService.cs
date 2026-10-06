@@ -165,6 +165,10 @@ namespace NzbDrone.Core.Tv
                 else
                 {
                     season.Monitored = existingSeason.Monitored;
+                    if (string.IsNullOrWhiteSpace(season.Title))
+                    {
+                        season.Title = existingSeason.Title;
+                    }
                 }
             }
 

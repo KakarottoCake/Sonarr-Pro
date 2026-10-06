@@ -139,8 +139,8 @@ namespace NzbDrone.Core.Test.Extras.Subtitles
 
             var expectedOutputs = new[]
             {
-                "Series Title - S01E01.1.en.forced.cc.srt",
-                "Series Title - S01E01.2.en.forced.cc.srt",
+                "Series Title - S01E01.en.forced.cc.srt",
+                "Series Title - S01E01.other.en.forced.cc.srt",
                 "Series Title - S01E01.en.forced.sdh.srt",
                 "Series Title - S01E01.en.forced.default.srt"
             };

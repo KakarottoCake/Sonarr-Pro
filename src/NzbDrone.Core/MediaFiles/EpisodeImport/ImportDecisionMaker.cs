@@ -6,6 +6,7 @@ using NzbDrone.Common.Disk;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Download;
 using NzbDrone.Core.Download.TrackedDownloads;
+using NzbDrone.Core.LibraryTools;
 using NzbDrone.Core.MediaFiles.EpisodeImport.Aggregation;
 using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.Tv;
@@ -31,6 +32,7 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport
         private readonly ITrackedDownloadService _trackedDownloadService;
         private readonly ILocalEpisodeCustomFormatCalculationService _formatCalculator;
         private readonly Logger _logger;
+        private readonly IManualEpisodeMappingService _manualMapping;
 
         public ImportDecisionMaker(IEnumerable<IImportDecisionEngineSpecification> specifications,
                                    IMediaFileService mediaFileService,
@@ -39,6 +41,7 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport
                                    IDetectSample detectSample,
                                    ITrackedDownloadService trackedDownloadService,
                                    ILocalEpisodeCustomFormatCalculationService formatCalculator,
+                                   IManualEpisodeMappingService manualMapping,
                                    Logger logger)
         {
             _specifications = specifications;
@@ -49,6 +52,7 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport
             _trackedDownloadService = trackedDownloadService;
             _formatCalculator = formatCalculator;
             _logger = logger;
+            _manualMapping = manualMapping;
         }
 
         public List<ImportDecision> GetImportDecisions(List<string> videoFiles, Series series)
@@ -121,7 +125,22 @@ namespace NzbDrone.Core.MediaFiles.EpisodeImport
                                            localEpisode.FileEpisodeInfo?.ReleaseType ??
                                            ReleaseType.Unknown;
 
+                var manual = _manualMapping.Find(localEpisode, downloadClientItem?.DownloadId, otherFiles);
+                if (manual != null && manual.Episodes.Count == 0)
+                {
+                    return new ImportDecision(localEpisode, new ImportRejection(ImportRejectionReason.InvalidSeasonOrEpisode, "Your saved episode choice could not be mapped unambiguously to this file. Use Manual Import to choose it explicitly."));
+                }
+
+                if (manual != null && localEpisode.FileEpisodeInfo == null && localEpisode.DownloadClientEpisodeInfo == null && localEpisode.FolderEpisodeInfo == null)
+                {
+                    localEpisode.FileEpisodeInfo = new ParsedEpisodeInfo { SeriesTitle = localEpisode.Series.Title, Quality = manual.History.Quality, Languages = manual.History.Languages };
+                }
+
                 _aggregationService.Augment(localEpisode, downloadClientItem);
+                if (manual != null)
+                {
+                    localEpisode.Episodes = manual.Episodes;
+                }
 
                 if (localEpisode.Episodes.Empty())
                 {

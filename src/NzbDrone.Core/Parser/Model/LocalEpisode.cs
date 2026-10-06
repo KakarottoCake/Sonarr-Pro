@@ -23,6 +23,7 @@ namespace NzbDrone.Core.Parser.Model
         public Series Series { get; set; }
         public List<Episode> Episodes { get; set; } = [];
         public List<DeletedEpisodeFile> OldFiles { get; set; }
+        public DateTime? PreservedFileDate { get; set; }
         public QualityModel Quality { get; set; }
         public List<Language> Languages { get; set; } = [];
         public IndexerFlags IndexerFlags { get; set; }
@@ -106,6 +107,8 @@ namespace NzbDrone.Core.Parser.Model
                 IndexerFlags = IndexerFlags,
                 ReleaseType = ReleaseType,
                 SceneName = SceneName,
+                SourceReleaseSize = Release?.Size > 0 ? Release.Size : null,
+                SourceReleaseTitle = Release?.Title,
                 OriginalFilePath = GetOriginalFilePath()
             };
 

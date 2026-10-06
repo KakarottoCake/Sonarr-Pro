@@ -6,6 +6,7 @@ using Moq;
 using NUnit.Framework;
 using NzbDrone.Common.Disk;
 using NzbDrone.Core.Datastore;
+using NzbDrone.Core.LibraryTools;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.MediaFiles.EpisodeImport;
 using NzbDrone.Core.Parser.Model;
@@ -44,6 +45,19 @@ namespace NzbDrone.Core.Test.MediaFiles
             Mocker.GetMock<IDiskProvider>()
                   .Setup(c => c.GetParentFolder(It.IsAny<string>()))
                   .Returns<string>(c => Path.GetDirectoryName(c));
+        }
+
+        [Test]
+        public void failed_hardlink_preflight_keeps_existing_file_and_database_record()
+        {
+            GivenSingleEpisodeWithSingleEpisodeFile();
+            Mocker.GetMock<IProOptionsService>().Setup(o => o.Read()).Returns(new ProOptions { HardlinkOnly = true });
+            Mocker.GetMock<IMoveEpisodeFiles>().Setup(m => m.VerifyHardlink(_episodeFile, _localEpisode)).Throws(new IOException("different filesystem"));
+
+            Assert.Throws<IOException>(() => Subject.UpgradeEpisodeFile(_episodeFile, _localEpisode, true));
+            Mocker.GetMock<IRecycleBinProvider>().Verify(m => m.DeleteFile(It.IsAny<string>(), It.IsAny<string>()), Times.Never());
+            Mocker.GetMock<IMediaFileService>().Verify(m => m.Delete(It.IsAny<EpisodeFile>(), It.IsAny<DeleteMediaFileReason>()), Times.Never());
+            Mocker.GetMock<IMoveEpisodeFiles>().Verify(m => m.CopyEpisodeFile(It.IsAny<EpisodeFile>(), It.IsAny<LocalEpisode>()), Times.Never());
         }
 
         private void GivenSingleEpisodeWithSingleEpisodeFile()
@@ -208,6 +222,23 @@ namespace NzbDrone.Core.Test.MediaFiles
             Subject.UpgradeEpisodeFile(_episodeFile, _localEpisode);
 
             Mocker.GetMock<IMediaFileService>().Verify(v => v.Delete(_localEpisode.Episodes.Single().EpisodeFile, It.IsAny<DeleteMediaFileReason>()), Times.Never());
+        }
+
+        [Test]
+        public void should_capture_original_file_date_before_deletion()
+        {
+            GivenSingleEpisodeWithSingleEpisodeFile();
+
+            var originalDate = System.DateTime.UtcNow.AddDays(-5);
+            var episodeFilePath = System.IO.Path.Combine(_localEpisode.Series.Path, _localEpisode.Episodes.First().EpisodeFile.Value.RelativePath);
+
+            Mocker.GetMock<IDiskProvider>()
+                .Setup(x => x.FileGetLastWrite(episodeFilePath))
+                .Returns(originalDate);
+
+            Subject.UpgradeEpisodeFile(_episodeFile, _localEpisode);
+
+            _localEpisode.PreservedFileDate.Should().Be(originalDate);
         }
     }
 }

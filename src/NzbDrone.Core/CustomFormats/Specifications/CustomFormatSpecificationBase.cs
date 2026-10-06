@@ -1,3 +1,4 @@
+using NzbDrone.Core.Annotations;
 using NzbDrone.Core.Validation;
 
 namespace NzbDrone.Core.CustomFormats
@@ -12,6 +13,9 @@ namespace NzbDrone.Core.CustomFormats
         public string Name { get; set; }
         public bool Negate { get; set; }
         public bool Required { get; set; }
+
+        [FieldDefinition(100, Label = "FormatAlternativeGroup", HelpText = "FormatAlternativeGroupHelp", Type = FieldType.Number)]
+        public int AlternativeGroup { get; set; }
 
         public ICustomFormatSpecification Clone()
         {

@@ -268,7 +268,7 @@ namespace NzbDrone.Core.MetadataSource.Tmdb
             }
 
             series.Seasons = resource.Seasons?
-                .Select(s => new Season { SeasonNumber = s.SeasonNumber, Monitored = s.SeasonNumber > 0 })
+                .Select(s => new Season { SeasonNumber = s.SeasonNumber, Title = s.Name, Monitored = s.SeasonNumber > 0 })
                 .ToList() ?? new List<Season>();
 
             return series;

@@ -8,6 +8,7 @@ import ImportSeries from 'AddSeries/ImportSeries/Import/ImportSeries';
 import ImportSeriesSelectFolder from 'AddSeries/ImportSeries/SelectFolder/ImportSeriesSelectFolder';
 import CalendarPage from 'Calendar/CalendarPage';
 import NotFound from 'Components/NotFound';
+import LibraryTools from 'LibraryTools/LibraryTools';
 import SeriesDetailsPage from 'Series/Details/SeriesDetailsPage';
 import SeriesIndex from 'Series/Index/SeriesIndex';
 import CustomFormatSettingsPage from 'Settings/CustomFormats/CustomFormatSettingsPage';
@@ -70,6 +71,7 @@ export function appRouteElements() {
       <Route path="/series/:titleSlug" element={<SeriesDetailsPage />} />
 
       <Route path="/statistics" element={<Statistics />} />
+      <Route path="/system/library" element={<LibraryTools />} />
 
       {/*
         Calendar

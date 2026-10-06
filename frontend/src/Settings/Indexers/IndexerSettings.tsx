@@ -14,12 +14,19 @@ import {
 } from 'typings/Settings/SettingsState';
 import translate from 'Utilities/String/translate';
 import Indexers from './Indexers/Indexers';
+import IndexerTestAllResults from './Indexers/IndexerTestAllResults';
 import ManageIndexersModal from './Indexers/Manage/ManageIndexersModal';
 import IndexerOptions from './Options/IndexerOptions';
-import { useTestAllIndexers } from './useIndexers';
+import { useSortedIndexers, useTestAllIndexers } from './useIndexers';
 
 function IndexerSettings() {
-  const { isTestingAllIndexers, testAllIndexers } = useTestAllIndexers();
+  const {
+    isTestingAllIndexers,
+    testAllIndexers,
+    testAllResults,
+    testAllError,
+  } = useTestAllIndexers();
+  const { data: indexers } = useSortedIndexers();
 
   const saveOptions = useRef<() => void>();
 
@@ -102,6 +109,11 @@ function IndexerSettings() {
               description={translate('IndexersSectionDescription')}
             />
 
+            <IndexerTestAllResults
+              indexers={indexers}
+              results={testAllResults}
+              error={testAllError}
+            />
             <Indexers />
           </div>
 

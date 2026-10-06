@@ -240,6 +240,8 @@ const seriesIdTokens = [
 ];
 
 const seasonTokens = [
+  { token: '{Season Title}', example: 'Stone Wars' },
+  { token: '{Season Year}', example: '2021' },
   { token: '{season:0}', example: '1' },
   { token: '{season:00}', example: '01' },
 ];

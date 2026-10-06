@@ -39,6 +39,7 @@ namespace NzbDrone.Core.CustomFormats
             {
                 EpisodeInfo = remoteEpisode.ParsedEpisodeInfo,
                 Series = remoteEpisode.Series,
+                EpisodeTitles = remoteEpisode.Episodes?.Select(e => e.Title).Where(t => !string.IsNullOrWhiteSpace(t)).ToList() ?? new List<string>(),
                 Size = size,
                 Languages = remoteEpisode.Languages,
                 IndexerFlags = remoteEpisode.Release?.IndexerFlags ?? 0,
@@ -88,7 +89,7 @@ namespace NzbDrone.Core.CustomFormats
         {
             var parsed = Parser.Parser.ParseTitle(history.SourceTitle);
 
-            long.TryParse(history.Data.GetValueOrDefault("size"), out var size);
+            long.TryParse(history.Data.GetValueOrDefault("size") ?? history.Data.GetValueOrDefault("Size"), out var size);
             Enum.TryParse(history.Data.GetValueOrDefault("indexerFlags"), true, out IndexerFlags indexerFlags);
             Enum.TryParse(history.Data.GetValueOrDefault("releaseType"), out ReleaseType releaseType);
 
@@ -119,7 +120,7 @@ namespace NzbDrone.Core.CustomFormats
             var episodeInfo = new ParsedEpisodeInfo
             {
                 SeriesTitle = localEpisode.Series.Title,
-                ReleaseTitle = localEpisode.SceneName.IsNotNullOrWhiteSpace() ? localEpisode.SceneName : Path.GetFileName(localEpisode.Path),
+                ReleaseTitle = localEpisode.Release?.Title ?? (localEpisode.SceneName.IsNotNullOrWhiteSpace() ? localEpisode.SceneName : Path.GetFileName(localEpisode.Path)),
                 Quality = localEpisode.Quality,
                 Languages = localEpisode.Languages,
                 ReleaseGroup = localEpisode.ReleaseGroup
@@ -129,10 +130,11 @@ namespace NzbDrone.Core.CustomFormats
             {
                 EpisodeInfo = episodeInfo,
                 Series = localEpisode.Series,
-                Size = localEpisode.Size,
+                EpisodeTitles = localEpisode.Episodes?.Select(e => e.Title).Where(t => !string.IsNullOrWhiteSpace(t)).ToList() ?? new List<string>(),
+                Size = localEpisode.Release?.Size > 0 ? localEpisode.Release.Size : localEpisode.Size,
                 Languages = localEpisode.Languages,
                 IndexerFlags = localEpisode.IndexerFlags,
-                ReleaseType = localEpisode.ReleaseType,
+                ReleaseType = localEpisode.Release?.ReleaseType == ReleaseType.SeasonPack ? ReleaseType.SeasonPack : localEpisode.ReleaseType,
                 Filename = fileName
             };
 
@@ -150,15 +152,21 @@ namespace NzbDrone.Core.CustomFormats
 
             foreach (var customFormat in allCustomFormats)
             {
-                var specificationMatches = customFormat.Specifications
+                bool MatchesConditions(IEnumerable<ICustomFormatSpecification> conditions)
+                {
+                    return conditions
                     .GroupBy(t => t.GetType())
                     .Select(g => new SpecificationMatchesGroup
                     {
                         Matches = g.ToDictionary(t => t, t => t.IsSatisfiedBy(input))
                     })
-                    .ToList();
+                    .All(x => x.DidMatch);
+                }
 
-                if (specificationMatches.All(x => x.DidMatch))
+                var alwaysRequired = customFormat.Specifications.Where(s => s.AlternativeGroup <= 0);
+                var alternatives = customFormat.Specifications.Where(s => s.AlternativeGroup > 0).GroupBy(s => s.AlternativeGroup).ToList();
+
+                if (MatchesConditions(alwaysRequired) && (alternatives.Count == 0 || alternatives.Any(MatchesConditions)))
                 {
                     matches.Add(customFormat);
                 }
@@ -171,7 +179,11 @@ namespace NzbDrone.Core.CustomFormats
         {
             var releaseTitle = string.Empty;
 
-            if (episodeFile.SceneName.IsNotNullOrWhiteSpace())
+            if (episodeFile.SourceReleaseTitle.IsNotNullOrWhiteSpace())
+            {
+                releaseTitle = episodeFile.SourceReleaseTitle;
+            }
+            else if (episodeFile.SceneName.IsNotNullOrWhiteSpace())
             {
                 _logger.Trace("Using scene name for release title: {0}", episodeFile.SceneName);
                 releaseTitle = episodeFile.SceneName;
@@ -200,7 +212,8 @@ namespace NzbDrone.Core.CustomFormats
             {
                 EpisodeInfo = episodeInfo,
                 Series = series,
-                Size = episodeFile.Size,
+                Size = episodeFile.SourceReleaseSize ?? episodeFile.Size,
+                EpisodeTitles = allCustomFormats.Any(f => f.Specifications.OfType<ReleaseTitleSpecification>().Any(s => s.ExcludeEpisodeTitles)) ? episodeFile.Episodes?.Value?.Select(e => e.Title).Where(t => !string.IsNullOrWhiteSpace(t)).ToList() ?? new List<string>() : new List<string>(),
                 Languages = episodeFile.Languages,
                 IndexerFlags = episodeFile.IndexerFlags,
                 ReleaseType = episodeFile.ReleaseType,

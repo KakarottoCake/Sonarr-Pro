@@ -78,6 +78,12 @@ namespace NzbDrone.Core.DecisionEngine
                 {
                     var parsedEpisodeInfo = Parser.Parser.ParseTitle(report.Title);
 
+                    if (searchCriteria is AnimeSeasonSearchCriteria animeSeason &&
+                        (parsedEpisodeInfo == null || (!parsedEpisodeInfo.FullSeason && parsedEpisodeInfo.EpisodeNumbers.Length == 0)))
+                    {
+                        parsedEpisodeInfo = AnimePackMatcher.Match(report.Title, animeSeason) ?? parsedEpisodeInfo;
+                    }
+
                     if (parsedEpisodeInfo == null || parsedEpisodeInfo.IsPossibleSpecialEpisode)
                     {
                         var specialEpisodeInfo = _parsingService.ParseSpecialEpisodeTitle(parsedEpisodeInfo, report.Title, report.TvdbId, report.TvRageId, report.ImdbId, searchCriteria);

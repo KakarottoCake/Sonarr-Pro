@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using NLog;
 using NzbDrone.Common.Extensions;
+using NzbDrone.Common.Serializer;
 using NzbDrone.Core.Datastore;
 using NzbDrone.Core.Download;
 using NzbDrone.Core.MediaFiles;
@@ -176,6 +177,12 @@ namespace NzbDrone.Core.History
                 history.Data.Add("CustomFormatScore", message.Episode.CustomFormatScore.ToString());
                 history.Data.Add("SeriesMatchType", message.Episode.SeriesMatchType.ToString());
                 history.Data.Add("ReleaseSource", message.Episode.ReleaseSource.ToString());
+                if (message.Episode.ManualEpisodeMapping)
+                {
+                    history.Data.Add("ManualEpisodeMapping", "true");
+                    history.Data.Add("ManualEpisodeIds", message.Episode.Episodes.Select(e => e.Id).ToList().ToJson());
+                }
+
                 history.Data.Add("IndexerFlags", message.Episode.Release.IndexerFlags.ToString());
                 history.Data.Add("ReleaseType", message.Episode.ParsedEpisodeInfo.ReleaseType.ToString());
 

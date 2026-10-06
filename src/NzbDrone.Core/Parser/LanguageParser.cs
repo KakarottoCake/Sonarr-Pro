@@ -31,9 +31,9 @@ namespace NzbDrone.Core.Parser
         private static readonly Regex GermanDualLanguageRegex = new(@"(?<!WEB[-_. ]?)\bDL\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static readonly Regex GermanMultiLanguageRegex = new(@"\bML\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-        private static readonly Regex SubtitleLanguageRegex = new(".+?([-_. ](?<tags>forced|foreign|default|cc|psdh|sdh))*[-_. ](?<iso_code>[a-z]{2,3})([-_. ](?<tags>forced|foreign|default|cc|psdh|sdh))*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex SubtitleLanguageRegex = new(".+?([-_. ](?<tags>forced|foreign|default|cc|psdh|sdh))*[-_. ](?<iso_code>[a-z]{2,3})(?<locale>-(?!(?:cc|sdh|forced|foreign|default|psdh)(?:[-_. ]|$))(?:[a-z]{2}|[a-z]{4})(?:-(?:[a-z]{2}|[0-9]{3}))?)?([-_. ](?<tags>forced|foreign|default|cc|psdh|sdh))*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-        private static readonly Regex SubtitleLanguageTitleRegex = new(@".+?(\.((?<tags1>forced|foreign|default|cc|psdh|sdh)|(?<iso_code>[a-z]{2,3})))*[-_. ](?<title>[^.]*)(\.((?<tags2>forced|foreign|default|cc|psdh|sdh)|(?<iso_code>[a-z]{2,3})))*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex SubtitleLanguageTitleRegex = new(@".+?(\.((?<tags1>forced|foreign|default|cc|psdh|sdh)|(?<iso_code>[a-z]{2,3})(?<locale>-(?!(?:cc|sdh|forced|foreign|default|psdh)(?:[-_. ]|$))(?:[a-z]{2}|[a-z]{4})(?:-(?:[a-z]{2}|[0-9]{3}))?)?))*[-_. ](?<title>[^.]*)(\.((?<tags2>forced|foreign|default|cc|psdh|sdh)|(?<iso_code>[a-z]{2,3})(?<locale>-(?!(?:cc|sdh|forced|foreign|default|psdh)(?:[-_. ]|$))(?:[a-z]{2}|[a-z]{4})(?:-(?:[a-z]{2}|[0-9]{3}))?)?))*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         private static readonly Regex SubtitleTitleRegex = new(@"^((?<title>.+) - )?(?<copy>(?<!\d+)\d{1,3}(?!\d+))$", RegexOptions.Compiled);
 
@@ -226,13 +226,26 @@ namespace NzbDrone.Core.Parser
             return languages.DistinctBy(l => (int)l).ToList();
         }
 
+        public static string ParseSubtitleLanguageCode(string fileName)
+        {
+            var match = SubtitleLanguageRegex.Match(SubtitleFilename(fileName));
+            if (!match.Success || IsoLanguages.Find(match.Groups["iso_code"].Value.ToLowerInvariant()) == null)
+            {
+                return null;
+            }
+
+            var code = match.Groups["iso_code"].Value.ToLowerInvariant();
+            var locale = match.Groups["locale"].Value;
+            return locale.Length > 0 ? code + locale : code.Length == 2 ? code : IsoLanguages.Find(code).TwoLetterCode;
+        }
+
         public static Language ParseSubtitleLanguage(string fileName)
         {
             try
             {
                 Logger.Debug("Parsing language from subtitle file: {0}", fileName);
 
-                var simpleFilename = Path.GetFileNameWithoutExtension(fileName);
+                var simpleFilename = SubtitleFilename(fileName);
                 var languageMatch = SubtitleLanguageRegex.Match(simpleFilename);
 
                 if (languageMatch.Success)
@@ -267,13 +280,14 @@ namespace NzbDrone.Core.Parser
             {
                 TitleFirst = false,
                 LanguageTags = ParseLanguageTags(fileName),
-                Language = ParseSubtitleLanguage(fileName)
+                Language = ParseSubtitleLanguage(fileName),
+                LanguageCode = ParseSubtitleLanguageCode(fileName)
             };
         }
 
         public static SubtitleTitleInfo ParseSubtitleLanguageInformation(string fileName)
         {
-            var simpleFilename = Path.GetFileNameWithoutExtension(fileName);
+            var simpleFilename = SubtitleFilename(fileName);
             var matchTitle = SubtitleLanguageTitleRegex.Match(simpleFilename);
 
             if (!matchTitle.Groups["title"].Success || (matchTitle.Groups["iso_code"].Captures.Count is var languageCodeNumber && languageCodeNumber != 1))
@@ -285,6 +299,11 @@ namespace NzbDrone.Core.Parser
 
             var isoCode = matchTitle.Groups["iso_code"].Value;
             var isoLanguage = IsoLanguages.Find(isoCode.ToLower());
+
+            if (isoLanguage == null || Regex.IsMatch(matchTitle.Groups["title"].Value, @"(?i)\bS\d+E\d+\b"))
+            {
+                return ParseBasicSubtitle(fileName);
+            }
 
             var language = isoLanguage?.Language ?? Language.Unknown;
 
@@ -300,7 +319,8 @@ namespace NzbDrone.Core.Parser
                 TitleFirst = matchTitle.Groups["tags1"].Captures.Empty(),
                 LanguageTags = languageTags.ToList(),
                 RawTitle = rawTitle,
-                Language = language
+                Language = language,
+                LanguageCode = matchTitle.Groups["locale"].Length > 0 ? isoCode + matchTitle.Groups["locale"].Value : isoCode.Length == 2 ? isoCode : isoLanguage.TwoLetterCode
             };
 
             UpdateTitleAndCopyFromTitle(subtitleTitleInfo);
@@ -331,7 +351,7 @@ namespace NzbDrone.Core.Parser
         {
             try
             {
-                var simpleFilename = Path.GetFileNameWithoutExtension(fileName);
+                var simpleFilename = SubtitleFilename(fileName);
                 var match = SubtitleLanguageRegex.Match(simpleFilename);
                 var languageTags = match.Groups["tags"].Captures
                     .Where(tag => !tag.Value.Empty())
@@ -344,6 +364,14 @@ namespace NzbDrone.Core.Parser
             }
 
             return new List<string>();
+        }
+
+        private static string SubtitleFilename(string fileName)
+        {
+            var simple = Path.GetFileNameWithoutExtension(fileName);
+            return Regex.IsMatch(simple, @"^[a-z]{2,3}(?:-(?:[a-z]{2}|[a-z]{4})(?:-(?:[a-z]{2}|[0-9]{3}))?)?(?:[._ -](?:forced|foreign|default|cc|psdh|sdh))*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1))
+                ? "subtitle." + simple
+                : simple;
         }
 
         private static List<Language> RegexLanguage(string title)

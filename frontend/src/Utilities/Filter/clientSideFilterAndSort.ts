@@ -31,18 +31,23 @@ const filter = <T extends ModelBase, TFilter = null, TSort = null>(
   data: ReadonlyArray<T>,
   options: ClientSideFilterAndSortOptions<T, TFilter, TSort>
 ) => {
-  const { selectedFilterKey, filters, customFilters, filterPredicates } =
-    options;
+  const {
+    selectedFilterKey,
+    selectedFilterKeys,
+    filters,
+    customFilters,
+    filterPredicates,
+  } = options;
 
-  if (!selectedFilterKey) {
+  if (!selectedFilterKey && !selectedFilterKeys?.length) {
     return data;
   }
 
-  const selectedFilters = findSelectedFilters(
-    selectedFilterKey,
-    filters,
-    customFilters
-  );
+  const selectedFilters = [
+    ...new Set(
+      selectedFilterKeys ?? (selectedFilterKey ? [selectedFilterKey] : [])
+    ),
+  ].flatMap((key) => findSelectedFilters(key, filters, customFilters));
 
   return data.filter((item: T) => {
     let i = 0;
@@ -129,6 +134,7 @@ const sort = <T extends ModelBase, TFilter = null, TSort = null>(
 
 interface ClientSideFilterAndSortOptions<T extends ModelBase, TFilter, TSort> {
   selectedFilterKey?: string | number;
+  selectedFilterKeys?: Array<string | number>;
   filters?: Filter[];
   filterPredicates?: Record<
     keyof TFilter,

@@ -72,6 +72,11 @@ namespace NzbDrone.Core.Extras.Subtitles
         {
             var subtitleFiles = _subtitleFileService.GetFilesBySeries(series.Id);
 
+            foreach (var subtitle in subtitleFiles)
+            {
+                subtitle.LanguageCode ??= LanguageParser.ParseSubtitleLanguageCode(subtitle.RelativePath);
+            }
+
             var movedFiles = new List<SubtitleFile>();
 
             foreach (var episodeFile in episodeFiles)
@@ -92,7 +97,7 @@ namespace NzbDrone.Core.Extras.Subtitles
                             subtitleFile.Copy = ++copy;
                         }
 
-                        var suffix = GetSuffix(subtitleFile.Language, subtitleFile.Copy, subtitleFile.LanguageTags, multipleCopies, subtitleFile.Title);
+                        var suffix = GetSuffix(subtitleFile.Language, subtitleFile.Copy, subtitleFile.LanguageTags, multipleCopies, subtitleFile.Title, subtitleFile.LanguageCode ?? LanguageParser.ParseSubtitleLanguageCode(subtitleFile.RelativePath));
 
                         movedFiles.AddIfNotNull(MoveFile(series, episodeFile, subtitleFile, suffix));
                     }
@@ -132,15 +137,24 @@ namespace NzbDrone.Core.Extras.Subtitles
                         continue;
                     }
 
+                    // Subfolders named for this video are unambiguous, even when
+                    // subtitle files themselves are named only for their language.
+                    var subtitleFolder = Path.GetDirectoryName(file);
+                    if (sourceFolder.IsParentPath(file) && Path.GetFileName(subtitleFolder).Equals(sourceFileName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        matchingFiles.Add(file);
+                        continue;
+                    }
+
                     // Season and episode match
-                    var fileEpisodeInfo = Parser.Parser.ParsePath(file) ?? new ParsedEpisodeInfo();
+                    var fileEpisodeInfo = Parser.Parser.ParsePath(file) ?? Parser.Parser.ParseTitle(Path.GetFileName(subtitleFolder)) ?? new ParsedEpisodeInfo();
 
                     if (fileEpisodeInfo.EpisodeNumbers.Length == 0)
                     {
                         continue;
                     }
 
-                    if (fileEpisodeInfo.SeasonNumber == localEpisode.FileEpisodeInfo.SeasonNumber &&
+                    if (localEpisode.FileEpisodeInfo != null && fileEpisodeInfo.SeasonNumber == localEpisode.FileEpisodeInfo.SeasonNumber &&
                         fileEpisodeInfo.EpisodeNumbers.SequenceEqual(localEpisode.FileEpisodeInfo.EpisodeNumbers))
                     {
                         matchingFiles.Add(file);
@@ -189,12 +203,15 @@ namespace NzbDrone.Core.Extras.Subtitles
 
             foreach (var file in matchingFiles)
             {
-                var language = LanguageParser.ParseSubtitleLanguage(file);
+                var subtitleInfo = LanguageParser.ParseSubtitleLanguageInformation(file);
+                var language = subtitleInfo.Language;
                 var extension = Path.GetExtension(file);
                 var languageTags = LanguageParser.ParseLanguageTags(file);
                 var subFile = new SubtitleFile
                 {
                     Language = language,
+                    LanguageCode = subtitleInfo.LanguageCode,
+                    Title = subtitleInfo.Title,
                     Extension = extension,
                     LanguageTags = languageTags
                 };
@@ -214,11 +231,13 @@ namespace NzbDrone.Core.Extras.Subtitles
                     var path = Path.Combine(sourceFolder, file.RelativePath);
                     var language = file.Language;
                     var extension = file.Extension;
-                    var suffix = GetSuffix(language, copy, file.LanguageTags, groupCount > 1);
+                    var suffix = GetSuffix(language, copy, file.LanguageTags, groupCount > 1, file.Title, file.LanguageCode);
                     try
                     {
                         var subtitleFile = ImportFile(localEpisode.Series, episodeFile, path, isReadOnly, extension, suffix);
                         subtitleFile.Language = language;
+                        subtitleFile.LanguageCode = file.LanguageCode;
+                        subtitleFile.Title = file.Title;
                         subtitleFile.LanguageTags = file.LanguageTags;
 
                         _mediaFileAttributeService.SetFilePermissions(path);
@@ -238,7 +257,7 @@ namespace NzbDrone.Core.Extras.Subtitles
             return importedFiles;
         }
 
-        private string GetSuffix(Language language, int copy, List<string> languageTags, bool multipleCopies = false, string title = null)
+        private string GetSuffix(Language language, int copy, List<string> languageTags, bool multipleCopies = false, string title = null, string languageCode = null)
         {
             var suffixBuilder = new StringBuilder();
 
@@ -259,10 +278,10 @@ namespace NzbDrone.Core.Extras.Subtitles
                 suffixBuilder.Append(copy);
             }
 
-            if (language != Language.Unknown)
+            if (languageCode != null || language != Language.Unknown)
             {
                 suffixBuilder.Append('.');
-                suffixBuilder.Append(IsoLanguages.Get(language).TwoLetterCode);
+                suffixBuilder.Append(languageCode ?? IsoLanguages.Get(language).TwoLetterCode);
             }
 
             if (languageTags.Any())

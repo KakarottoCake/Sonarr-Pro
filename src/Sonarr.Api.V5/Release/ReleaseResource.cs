@@ -26,6 +26,7 @@ public class ReleaseResource : RestResource
     public int ReleaseWeight { get; set; }
     public List<CustomFormatResource>? CustomFormats { get; set; }
     public int CustomFormatScore { get; set; }
+    public List<FormatScoreResource> FormatScores { get; set; } = [];
     public AlternateTitleResource? SceneMapping { get; set; }
 }
 
@@ -62,6 +63,10 @@ public static class ReleaseResourceMapper
         var release = decision.ToResource();
 
         release.ReleaseWeight = initialWeight;
+        release.FormatScores = decision.RemoteEpisode.CustomFormats.Select(format => new FormatScoreResource
+        {
+            Id = format.Id, Name = format.Name, Score = profile.CalculateCustomFormatScore([format])
+        }).ToList();
 
         if (release.ParsedInfo?.Quality == null)
         {
@@ -98,4 +103,11 @@ public class ReleaseEpisodeResource
         AbsoluteEpisodeNumber = episode.AbsoluteEpisodeNumber;
         Title = episode.Title;
     }
+}
+
+public class FormatScoreResource
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public int Score { get; set; }
 }
