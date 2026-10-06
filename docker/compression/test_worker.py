@@ -188,7 +188,7 @@ class WorkerTests(unittest.TestCase):
             if args[-1] != '-':
                 Path(args[-1]).write_bytes(b'smaller')
         self.worker.api = lambda path, body=None: {'path': str(self.series)} if path == 'series/1' else []
-        with patch('worker.probe', side_effect=[media(), media('hevc')]), patch.object(self.worker, 'process_file', side_effect=encode):
+        with patch('worker.probe', side_effect=[media(), media('h264')]), patch.object(self.worker, 'process_file', side_effect=encode):
             with self.assertRaises(ValueError):
                 self.worker.compress(self.job, self.worker.modes[0], self.file)
         self.assertEqual(before, self.file.read_bytes())
@@ -198,7 +198,7 @@ class WorkerTests(unittest.TestCase):
             if args[-1] != '-':
                 Path(args[-1]).write_bytes(b'smaller')
                 self.file.write_bytes(b'replacement from downloader')
-        with patch('worker.probe', side_effect=[media(), media('hevc')]), patch.object(self.worker, 'process_file', side_effect=encode):
+        with patch('worker.probe', side_effect=[media(), media('h264')]), patch.object(self.worker, 'process_file', side_effect=encode):
             with self.assertRaises(ValueError):
                 self.worker.compress(self.job, self.worker.modes[0], self.file)
         self.assertEqual(self.file.read_bytes(), b'replacement from downloader')
@@ -215,7 +215,13 @@ class WorkerTests(unittest.TestCase):
 
     def test_command_copies_all_other_streams_and_bounds_threads(self):
         args = self.worker.command(self.worker.modes[0], self.file, self.root / 'output.mkv')
-        self.assertIn('pools=2:frame-threads=1:log-level=error', args)
+        self.assertEqual(args[args.index('-threads:v:0') + 1], '2')
+        self.assertNotIn('-x265-params', args)
+        for mode in self.worker.modes[:2]:
+            self.assertEqual(mode['codec'], 'h264')
+            command = self.worker.command(mode, self.file, self.root / 'output.mkv')
+            self.assertEqual(command[command.index('-c:v:0') + 1], 'libx264')
+            self.assertEqual(command[command.index('-crf') + 1], '23')
         self.assertEqual(args[args.index('-map') + 1], '0')
         ffmpeg_args = args[args.index('ffmpeg') + 1:]
         self.assertEqual(ffmpeg_args[ffmpeg_args.index('-c') + 1], 'copy')

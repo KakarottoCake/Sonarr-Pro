@@ -31,7 +31,7 @@ directory. Restarted jobs become interrupted; starting again skips files
 already processed. A shared FileSaver/Phantom lock avoids concurrent script
 encodes. Sonarr queues up to ten shows and compresses only registered files.
 
-Software presets use x265 CRF 24 and fast/slow, at low process priority with at
+Software presets use H.264 (x264) CRF 23 and fast/slow, at low process priority with at
 most two encoding threads. Hardware fast/slow use tested VAAPI H.264 quality
 controls. Hardware HEVC is not advertised on Haswell. FileSaver and Phantom
 choices read the installed scripts' CRF/preset/QP and minimum-size settings and

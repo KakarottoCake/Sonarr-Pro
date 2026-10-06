@@ -149,10 +149,10 @@ class Worker:
 
     def make_modes(self):
         modes = [
-            {'id': 'software-fast', 'name': 'Software • Fast', 'description': 'HEVC with a fast CPU preset. Good space savings; leaves CPU capacity for Plex.', 'codec': 'hevc', 'encoder': 'libx265', 'preset': 'fast', 'crf': 24, 'minSizeMb': 0, 'available': True},
-            {'id': 'software-slow', 'name': 'Software • Slow', 'description': 'HEVC with a slow CPU preset. Better compression efficiency; can take hours per episode on this CPU.', 'codec': 'hevc', 'encoder': 'libx265', 'preset': 'slow', 'crf': 24, 'minSizeMb': 0, 'available': True},
+            {'id': 'software-fast', 'name': 'Software • Fast', 'description': 'H.264 with a fast CPU preset. Faster compression; leaves CPU capacity for Plex.', 'codec': 'h264', 'encoder': 'libx264', 'preset': 'fast', 'crf': 23, 'minSizeMb': 0, 'available': True},
+            {'id': 'software-slow', 'name': 'Software • Slow', 'description': 'H.264 with a slow CPU preset. Better compression efficiency; takes longer on this CPU.', 'codec': 'h264', 'encoder': 'libx264', 'preset': 'slow', 'crf': 23, 'minSizeMb': 0, 'available': True},
             {'id': 'hardware-fast', 'name': 'Hardware • Fast', 'description': 'Intel H.264, speed priority. Lowest CPU load; savings depend on the original file.', 'codec': 'h264', 'encoder': 'h264_vaapi', 'quality': 8, 'qp': 24, 'bf': 0, 'minSizeMb': 0, 'available': self.hardware},
-            {'id': 'hardware-slow', 'name': 'Hardware • Slow', 'description': 'Intel H.264, quality priority. More encoder work for better efficiency; still much faster than CPU HEVC.', 'codec': 'h264', 'encoder': 'h264_vaapi', 'quality': 1, 'qp': 23, 'bf': 2, 'minSizeMb': 0, 'available': self.hardware},
+            {'id': 'hardware-slow', 'name': 'Hardware • Slow', 'description': 'Intel H.264, quality priority. More encoder work for better efficiency; still much faster than software compression.', 'codec': 'h264', 'encoder': 'h264_vaapi', 'quality': 1, 'qp': 23, 'bf': 2, 'minSizeMb': 0, 'available': self.hardware},
         ]
         for name in ('filesaver', 'phantom'):
             try:
@@ -313,8 +313,6 @@ class Worker:
                 args += ['-quality', str(mode['quality']), '-bf', str(mode['bf'])]
         else:
             args += ['-preset', mode['preset'], '-crf', str(mode['crf']), '-threads:v:0', str(self.threads)]
-            if mode['encoder'] == 'libx265':
-                args += ['-x265-params', f'pools={self.threads}:frame-threads=1:log-level=error']
         args += ['-progress', 'pipe:1', '-nostats', str(output)]
         return ['nice', '-n', '15', 'ionice', '-c', '2', '-n', '7'] + args
 
