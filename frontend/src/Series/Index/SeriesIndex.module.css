@@ -6,14 +6,23 @@
   padding: 10px 20px;
   border-bottom: 1px solid var(--borderColor);
 
-  input {
+  select {
+    flex: 1;
     min-width: 0;
-    max-width: 520px;
   }
 
   span {
     flex-shrink: 0;
   }
+}
+
+.pathFilterPicker {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  max-width: 640px;
+  gap: 10px;
 }
 
 @media (--breakpointSmall) {
@@ -25,10 +34,11 @@
       width: 100%;
     }
 
-    input {
-      flex: 1;
-      width: 1px;
-    }
+  }
+
+  .pathFilterPicker {
+    flex-basis: 100%;
+    flex-wrap: wrap;
   }
 }
 

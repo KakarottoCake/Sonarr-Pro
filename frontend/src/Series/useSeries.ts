@@ -631,14 +631,23 @@ export const useSeriesIndex = () => {
   const customFilters = useCustomFiltersList('series');
 
   const data = useMemo(() => {
+    const selectedPath = pathFilter
+      .replace(/\\/g, '/')
+      .replace(/\/+$/, '')
+      .toLowerCase();
     return clientSideFilterAndSort<
       Series,
       typeof FILTER_PREDICATES,
       typeof SORT_PREDICATES
     >(
-      seriesData.filter((series) =>
-        series.path.toLowerCase().includes(pathFilter.trim().toLowerCase())
-      ),
+      seriesData.filter((series) => {
+        const path = series.path.replace(/\\/g, '/').toLowerCase();
+        return (
+          !selectedPath ||
+          path === selectedPath ||
+          path.startsWith(`${selectedPath}/`)
+        );
+      }),
       {
         selectedFilterKey,
         filters: FILTERS,
