@@ -44,6 +44,7 @@ import SeriesIndexSelectFooter from './Select/SeriesIndexSelectFooter';
 import SeriesIndexSelectModeButton from './Select/SeriesIndexSelectModeButton';
 import SeriesIndexSelectModeMenuItem from './Select/SeriesIndexSelectModeMenuItem';
 import SeriesIndexFooter from './SeriesIndexFooter';
+import SeriesPathFilter from './SeriesPathFilter';
 import SeriesIndexTable from './Table/SeriesIndexTable';
 import SeriesIndexTableOptions from './Table/SeriesIndexTableOptions';
 import styles from './SeriesIndex.module.css';
@@ -87,8 +88,14 @@ function SeriesIndexBody({ seriesIndex }: SeriesIndexBodyProps) {
     totalItems,
   } = seriesIndex;
 
-  const { selectedFilterKey, sortKey, sortDirection, view, columns } =
-    useSeriesOptions();
+  const {
+    selectedFilterKey,
+    sortKey,
+    sortDirection,
+    view,
+    columns,
+    pathFilter,
+  } = useSeriesOptions();
   const filters = FILTERS;
 
   const customFilters = useCustomFiltersList('series');
@@ -109,7 +116,7 @@ function SeriesIndexBody({ seriesIndex }: SeriesIndexBodyProps) {
 
   if (anySelected) {
     refreshLabel = translate('UpdateSelected');
-  } else if (selectedFilterKey !== 'all') {
+  } else if (selectedFilterKey !== 'all' || pathFilter.trim()) {
     refreshLabel = translate('UpdateFiltered');
   }
 
@@ -391,6 +398,7 @@ function SeriesIndexBody({ seriesIndex }: SeriesIndexBodyProps) {
           />
         </ToolbarItem>
       </PageToolbar>
+      <SeriesPathFilter count={data.length} total={totalItems} />
       <div className={styles.pageContentBodyWrapper}>
         <PageContentBody
           ref={scrollerRef}

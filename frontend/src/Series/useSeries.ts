@@ -625,7 +625,8 @@ const useSeries = () => {
 export default useSeries;
 
 export const useSeriesIndex = () => {
-  const { selectedFilterKey, sortKey, sortDirection } = useSeriesOptions();
+  const { selectedFilterKey, sortKey, sortDirection, pathFilter } =
+    useSeriesOptions();
   const { data: seriesData = [], ...queryResult } = useSeries();
   const customFilters = useCustomFiltersList('series');
 
@@ -634,23 +635,35 @@ export const useSeriesIndex = () => {
       Series,
       typeof FILTER_PREDICATES,
       typeof SORT_PREDICATES
-    >(seriesData, {
-      selectedFilterKey,
-      filters: FILTERS,
-      filterPredicates: FILTER_PREDICATES,
-      customFilters,
-      sortKey: sortKey as keyof Series,
-      sortDirection,
-      secondarySortKey: 'sortTitle',
-      secondarySortDirection: 'ascending',
-      sortPredicates: SORT_PREDICATES,
-    });
-  }, [customFilters, seriesData, selectedFilterKey, sortKey, sortDirection]);
+    >(
+      seriesData.filter((series) =>
+        series.path.toLowerCase().includes(pathFilter.trim().toLowerCase())
+      ),
+      {
+        selectedFilterKey,
+        filters: FILTERS,
+        filterPredicates: FILTER_PREDICATES,
+        customFilters,
+        sortKey: sortKey as keyof Series,
+        sortDirection,
+        secondarySortKey: 'sortTitle',
+        secondarySortDirection: 'ascending',
+        sortPredicates: SORT_PREDICATES,
+      }
+    );
+  }, [
+    customFilters,
+    seriesData,
+    selectedFilterKey,
+    sortKey,
+    sortDirection,
+    pathFilter,
+  ]);
 
   return {
     ...queryResult,
     data: data.data,
-    totalItems: data.totalItems,
+    totalItems: seriesData.length,
   };
 };
 

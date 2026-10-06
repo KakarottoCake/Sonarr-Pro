@@ -33,6 +33,9 @@ jobs:
       - name: Test
         run: dotnet test src/NzbDrone.Core.Test/Sonarr.Core.Test.csproj -c Debug --no-build --logger "console;verbosity=minimal"
 
+      - name: Compression worker safety tests
+        run: python3 docker/compression/test_worker.py
+
   frontend:
     name: Lint and build frontend
     runs-on: ubuntu-latest
